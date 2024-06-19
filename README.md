@@ -23,13 +23,13 @@
     
     # Send an event to the generator
     sv_set_event_t( $slot, 1, 0 ); # Process events in real time
-    warn sv_set_module_ctl_value( $slot, $generator, 7, 0, 2 ); # Disable sustain
-    warn sv_set_module_ctl_value( $slot, $generator, 4, 200, 2 ); # Set release value
-    sv_send_event( $slot, 0, 50, 127, $generator );
-    sleep(2);
+    sv_set_module_ctl_value( $slot, $generator, 7, 0, 2 ); # Disable sustain
+    sv_set_module_ctl_value( $slot, $generator, 4, 200, 2 ); # Set release value
+    sv_send_event( $slot, 0, 50, 127, $generator + 1 );
+    sleep(1);
     
     # Save the patch
-    sv_save( $slot, '~/awesome_patch.sunvox' )
+    sv_save( $slot, 'awesome_patch.sunvox' )
     
     # Clean up
     sv_close_slot( 0 );
