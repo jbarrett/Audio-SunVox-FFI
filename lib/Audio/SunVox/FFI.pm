@@ -178,4 +178,10 @@ BEGIN {
 use constant $constants;
 _bind;
 
+my @export_constants = ( sort keys %{ $constants } );
+my @export_binds     = ( sort keys %{ $binds } );
+our @EXPORT_OK       = ( @export_constants, @export_binds );
+our %EXPORT_TAGS     = ( all => \@EXPORT_OK, constants => \@export_constants, binds => \@export_binds );
+
+
 1;
