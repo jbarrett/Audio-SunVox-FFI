@@ -9,6 +9,8 @@ use Carp qw/ croak carp /;
 
 our $VERSION = '0.00';
 
+# ABSTRACT: Bindings for the SunVox library - an interface to Alexander Zolotov's SunVox modular synthesizer and sequencer
+
 our $lofi = 0;
 my $ffi;
 my $constants;
@@ -185,3 +187,71 @@ our %EXPORT_TAGS     = ( all => \@EXPORT_OK, constants => \@export_constants, bi
 
 
 1;
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 SYNOPSIS
+
+    use Audio::SunVox::FFI ':all';
+    
+    # Initialise
+    my $audiodriver = 'asio';
+    my $audiodevice = 1;
+    my $buffer      = 256;
+    my $frequency   = 48_000;
+    my $channels    = 2;
+    sv_init( "audiodriver=$audiodriver|audiodevice=$audiodevice|buffer=$buffer", $frequency, $channels );
+    
+    # Open a "slot" - an instance of SunVox
+    my $slot = 0;
+    sv_open_slot( $slot );
+    
+    # Create a "generator" oscillator
+    sv_lock_slot( $slot );
+    my $generator = sv_new_module( $slot, "Generator", "foo name" );
+    sv_connect_module( $slot, $generator, 0 ); # 0 is Output
+    sv_unlock_slot( $slot );
+    
+    # Send an event to the generator
+    sv_set_event_t( $slot, 1, 0 ); # Process events in real time
+    warn sv_set_module_ctl_value( $slot, $generator, 7, 0, 2 ); # Disable sustain
+    warn sv_set_module_ctl_value( $slot, $generator, 4, 200, 2 ); # Set release value
+    sv_send_event( $slot, 0, 50, 127, $generator );
+    sleep(2);
+    
+    # Save the patch
+    sv_save( $slot, '~/awesome_patch.sunvox' )
+    
+    # Clean up
+    sv_close_slot( 0 );
+    sv_deinit;
+
+=head1 DESCRIPTION
+
+L<SunVox|https://warmplace.ru/soft/sunvox/> is a modular synthesizer with pattern-based
+sequencer (tracker). L<The SunVox library|https://warmplace.ru/soft/sunvox/sunvox_lib.php>
+is a free library offering access to the facilities offered by SunVox, minus the frontend,
+allowing for real-time control of sequences and playback.
+
+This module offers a binding to the SunVox library.
+
+=head1 CONTRIBUTING
+
+L<https://github.com/jbarrett/Audio-SunVox-FFI>
+
+All comments and contributions welcome.
+
+=head1 BUGS AND SUPPORT
+
+Please direct all requests to L<https://github.com/jbarrett/Audio-SunVox-FFI/issues>
+
+=head1 ACKNOWLEDGEMENTS
+
+Powered by SunVox (modular synth & tracker)
+Copyright (c) 2008 - 2024, Alexander Zolotov <nightradio@gmail.com>, WarmPlace.ru
+
+=cut
