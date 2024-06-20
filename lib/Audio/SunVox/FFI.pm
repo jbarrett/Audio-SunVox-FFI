@@ -9,7 +9,7 @@ use Carp qw/ croak carp /;
 
 our $VERSION = '0.00';
 
-# ABSTRACT: Bindings for the SunVox library - an interface to Alexander Zolotov's SunVox modular synthesizer and sequencer
+# ABSTRACT: Bindings for the SunVox library - a modular synthesizer and sequencer
 
 our $lofi = 0;
 my $ffi;
