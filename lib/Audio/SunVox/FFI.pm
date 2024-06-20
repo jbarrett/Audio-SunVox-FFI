@@ -190,10 +190,6 @@ our %EXPORT_TAGS     = ( all => \@EXPORT_OK, constants => \@export_constants, bi
 
 __END__
 
-=pod
-
-=encoding UTF-8
-
 =head1 SYNOPSIS
 
     use Audio::SunVox::FFI ':all';
@@ -225,7 +221,7 @@ __END__
     sleep(1);
     
     # Save the patch
-    sv_save( $slot, 'awesome_patch.sunvox' )
+    sv_save( $slot, 'awesome_patch.sunvox' );
     
     # Clean up
     sv_close_slot( 0 );
