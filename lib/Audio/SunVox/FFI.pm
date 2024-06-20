@@ -220,7 +220,8 @@ __END__
     sv_set_event_t( $slot, 1, 0 ); # Process events in real time
     sv_set_module_ctl_value( $slot, $generator, 7, 0, 2 ); # Disable sustain
     sv_set_module_ctl_value( $slot, $generator, 4, 200, 2 ); # Set release value
-    sv_send_event( $slot, 0, 50, 127, $generator + 1 );
+    sv_send_event( $slot, 0, 50, 127, $generator + 1 ); # Send a note on event
+    # ^ Why $generator + 1? Dunno yet...
     sleep(1);
     
     # Save the patch
@@ -237,7 +238,93 @@ sequencer (tracker). L<The SunVox library|https://warmplace.ru/soft/sunvox/sunvo
 is a free library offering access to the facilities offered by SunVox, minus the frontend,
 allowing for real-time control of sequences and playback.
 
-This module offers a binding to the SunVox library.
+This module offers Perl bindings for the SunVox library.
+
+This distribution is currently in alpha. The bindings interface (this module) is unlikely to change
+significantly, though it may benefit from some niceties - make function parameters as
+consistent as possible, easier audio device discovery, automagic locking, object interface
+and so on. That is, it is not as feature complete and usable as I would wish.
+
+=head1 Getting Started
+
+Before using this library, I would recommend trying out the complete
+L<SunVox tracker application|https://warmplace.ru/soft/sunvox/> for your platform to
+familiarise yourself with its capabilities and terminology. A detailed
+L<User manual for SunVox|https://warmplace.ru/soft/sunvox/manual.php> is available.
+
+As this is a more-or-less direct binding to the library, the
+L<SunVox library manual|https://warmplace.ru/soft/sunvox/sunvox_lib.php> should also
+provide a useful reference.
+
+What follows is some terminology used by SunVox, with a focus on the synthesizer components
+rather than the sequencer - learning to use a tracker is left to the reader as an exercise.
+
+=head2 Slot
+
+A slot is an independent instance of the SunVox engine, with its own set
+of sequences and modules. You may create up to 16 of these, numbered from zero to fifteen.
+
+=head2 Module
+
+Modules perform the functions of a modular synthesizer - they perform some task as part
+of a connected chain of modules, passing audio or control signals between each other
+in order to play back or perform music.
+
+In SunVox these tasks are separated into three broad categories, synths (often called
+oscillators in other modular systems), effects, and misc (often called utility modules).
+
+=head3 Synths
+
+Synths are the noise makers, the sound producing components of the modular system. They
+vary from basic oscillators and samplers, to complex additive systems like FM and
+spectrographic synthesis.
+
+Examples of Synths in SunVox include Generator, Sampler, FM, SpectraVoice, and DrumSynth.
+
+=head3 Effects
+
+These modules shape and colour the sound provided by synths to provide a sense
+of movement, or just to make it sound good to your ears.
+
+Examples of Effects in SunVox include Filter, Delay, Reverb, Distortion, and Compressor.
+
+=head3 Misc
+
+Misc modules are those which do not fit into either category above. They usually provide
+useful services for directing the parameters of other modules. The provide facilities
+such as envelopes, portamento (glide between notes), pitch following, and signal routing
+and duplication.
+
+Examples of Misc modules in SunVox include ADSR, Glide, Pitch Detector, and MultiSynth.
+
+=head3 MetaModule
+
+MetaModule is a stand out misc module. It is a module of modules. That is, it allows for
+the creation of custom modules using existing modules as building blocks.
+
+It may be possible to create MetaModules using the sunvox library by creating and
+loading patches as MetaModules, though a means of mapping controllers to MetaModule
+components does not appear to be available currently.
+
+=head3 Input / Output
+
+Module 0 is a special module called "Output", which is always present. This module
+represents the output side of the configured audio interface.
+
+A corresponding synth module called "Input" may be instantiated to route audio from the
+input of your audio interface for, e.g. live performance or sampling of another
+instrument.
+
+=head2 Connection
+
+Connections between modules may be created in any arbitrary combination, though only some
+of these make sense, e.g. the classic oscillator -> filter -> output chain (if you noticed
+the absence of a VCA and envelope generator here, note that SunVox generators usually
+incorporate their own envelopes and amplitude control, as well as filters and filter
+envelopes in some cases).
+
+Any set of modules hoping to produce a sound must ultimately be connected to the output
+module.
 
 =head1 CONTRIBUTING
 
@@ -251,7 +338,7 @@ Please direct all requests to L<https://github.com/jbarrett/Audio-SunVox-FFI/iss
 
 =head1 ACKNOWLEDGEMENTS
 
-Powered by SunVox (modular synth & tracker)
+Powered by SunVox (modular synth & tracker),
 Copyright (c) 2008 - 2024, Alexander Zolotov <nightradio@gmail.com>, WarmPlace.ru
 
 =cut
