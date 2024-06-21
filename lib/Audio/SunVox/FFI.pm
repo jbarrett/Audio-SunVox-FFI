@@ -295,7 +295,7 @@ Examples of Misc modules in SunVox include ADSR, Glide, Pitch Detector, and Mult
 
 =head3 MetaModule
 
-MetaModule is a stand out misc module. It is a module of modules. That is, it allows for
+MetaModule is a stand out misc-category module. It is a module of modules. That is, it allows for
 the creation of custom modules using existing modules as building blocks.
 
 It may be possible to create MetaModules using the sunvox library by creating and
@@ -315,11 +315,11 @@ instrument.
 
 Connections between modules may be created in any arbitrary combination, though only some
 of these make sense, e.g. the classic oscillator -> filter -> output chain (if you noticed
-the absence of a VCA and envelope generator here, note that SunVox generators usually
+the absence of a VCA and envelope generator here, note that SunVox synths usually
 incorporate their own envelopes and amplitude control, as well as filters and filter
 envelopes in some cases).
 
-Any set of modules hoping to produce a sound must ultimately be connected to the output
+Any set of modules hoping to produce a sound must ultimately be connected to the Output
 module.
 
 =head1 CONTRIBUTING
