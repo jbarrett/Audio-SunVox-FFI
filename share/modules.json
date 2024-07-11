@@ -1282,7 +1282,7 @@
             "max_disp" : 32768,
             "max_hex" : 32768,
             "max_real" : 32768,
-            "method_name" : "random_phase",
+            "method_name" : "random_phase_lite",
             "min_disp" : 0,
             "min_hex" : 0,
             "min_real" : 0

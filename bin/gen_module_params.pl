@@ -61,7 +61,8 @@ sub class_name {
 
 sub method_name {
     my ( $name ) = @_;
-    $name =~ s/\s+\(.*\)$//;
+    $name =~ s/\s+\(.*\)$// if $name !~ /\(lite/;
+    $name =~ s/[()]//g;
     $name =~ s/-/ /g;
     $name =~ s/[\s.]+/_/g;
     lc $name;
