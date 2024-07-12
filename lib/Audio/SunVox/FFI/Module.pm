@@ -97,6 +97,7 @@ sub connect_to {
     my ( $self, @modules ) = @_;
     $self->slot->lock;
     sv_connect_module( $self->slot->num, $self->num, $modules[0]->num );
+    $self->slot->unlock;
     return ( $self, @modules );
 }
 *connect = \&connect_to;
