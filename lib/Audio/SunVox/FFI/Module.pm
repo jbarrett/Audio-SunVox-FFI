@@ -78,7 +78,7 @@ sub module {
 sub new {
     my ( $class, %params ) = @_;
     $params{ slot } //= Audio::SunVox::FFI::Slot->get_last;
-
+    bless \%params, $class;
 }
 
 sub connect {
