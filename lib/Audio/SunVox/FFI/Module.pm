@@ -29,6 +29,33 @@ my $scales = {
 };
 our $default_scale = 'disp';
 
+use namespace::clean;
+
+sub _ctl {
+    my ( $ctl, $scale ) = @_;
+    my ( $min, $max, $method_name ) = @{ $ctl }{ "min_$scale", "max_$scale", 'method_name' };
+    sub {
+        my ( $self, $value ) = @_;
+        goto nobounds if $self->skip_bounds_checking;
+        if ( $value < $min ) {
+            carp "Value $value below minimum of $min for $ctl->{ method_name } - setting to $min";
+            $value = $min;
+        }
+        elsif ( $value > $max ) {
+            carp "Value $value below maximum of $max for $ctl->{ method_name } - setting to $max";
+            $value = $max;
+        }
+nobounds:
+        sv_set_module_ctl_value(
+            $self->slot->num,
+            $self->num,
+            $ctl->{ ctl_num },
+            $value,
+            $self->scale( $scale )
+        );
+    }
+}
+
 sub import {
     my ( $pkg, %cfg ) = @_;
     use DDP; p @_;
@@ -70,29 +97,6 @@ sub num { shift->{ num } }
 
 sub slot { shift->{ slot } }
 
-sub _ctl {
-    my ( $ctl, $scale ) = @_;
-    my ( $min, $max, $method_name ) = @{ $ctl }{ "min_$scale", "max_$scale", 'method_name' };
-    sub {
-        my ( $self, $value ) = @_;
-        goto nobounds if $self->skip_bounds_checking;
-        if ( $value < $min ) {
-            carp "Value $value below minimum of $min for $ctl->{ method_name } - setting to $min";
-            $value = $min;
-        }
-        elsif ( $value > $max ) {
-            carp "Value $value below maximum of $max for $ctl->{ method_name } - setting to $max";
-            $value = $max;
-        }
-nobounds:
-        sv_set_module_ctl_value(
-            $self->slot->num,
-            $self->num,
-            $ctl->{ ctl_num },
-            $value,
-            self->scale( $scale )
-        );
-    }
 }
 
 for my $module_name ( keys %{ $module_data } ) {
