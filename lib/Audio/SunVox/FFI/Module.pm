@@ -128,8 +128,9 @@ for my $module_name ( keys %{ $module_data } ) {
     }
 }
 
-my $meta = meta::package->get( 'Output' );
-$meta->add_symbol( '@ISA', ['Audio::SunVox::FFI::Module'] );
-$meta->add_symbol('&num', sub { 0 } );
+package Output {
+    use base 'Audio::SunVox::FFI::Module';
+    sub num { 0 }
+}
 
 1;
