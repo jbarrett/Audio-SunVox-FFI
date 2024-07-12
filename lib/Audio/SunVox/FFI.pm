@@ -58,6 +58,52 @@ my $ffi;
 my $constants;
 my $binds;
 
+my @modules = map { s/^\s*//; $_ } split /[\n\r]+\s*/, <<'MODULES';
+    Analog generator
+    DrumSynth
+    FM
+    FMX
+    Generator
+    Input
+    Kicker
+    Vorbis player
+    Sampler
+    SpectraVoice
+    Amplifier
+    Compressor
+    DC Blocker
+    Delay
+    Distortion
+    Echo
+    EQ
+    FFT
+    Filter
+    Filter Pro
+    Flanger
+    LFO
+    Loop
+    Modulator
+    Pitch shifter
+    Reverb
+    Vocal filter
+    Vibrato
+    WaveShaper
+    ADSR
+    Ctl2Note
+    Feedback
+    Glide
+    GPIO
+    MetaModule
+    MultiCtl
+    MultiSynth
+    Pitch2Ctl
+    Pitch Detector
+    Sound2Ctl
+    Velocity2Ctl
+MODULES
+
+sub sv_get_all_module_types { @modules }
+
 {
     package SunVox::Note;
     use FFI::Platypus::Record;
@@ -224,7 +270,7 @@ _bind;
 
 my @export_constants = ( sort keys %{ $constants } );
 my @export_binds     = ( sort keys %{ $binds } );
-our @EXPORT_OK       = ( @export_constants, @export_binds );
+our @EXPORT_OK       = ( @export_constants, @export_binds, 'sv_get_all_module_types' );
 our %EXPORT_TAGS     = ( all => \@EXPORT_OK, constants => \@export_constants, binds => \@export_binds );
 
 

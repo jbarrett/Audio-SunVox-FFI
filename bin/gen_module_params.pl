@@ -1,55 +1,13 @@
 #!/usr/bin/env perl
 
 use JSON::PP qw/ encode_json /;
+use File::Share qw/ dist_file /;
 use FindBin;
 use lib "$FindBin::Bin/../lib/";
-my $json = "$FindBin::Bin/../share/modules.json";
-
 use Audio::SunVox::FFI ':all';
+my $json = dist_file('Audio-SunVox-FFI', 'modules.json');
 
-my @modules = map { s/^\s*//; $_ } split /[\n\r]+\s*/, <<'MODULES';
-    Analog generator
-    DrumSynth
-    FM
-    FMX
-    Generator
-    Input
-    Kicker
-    Vorbis player
-    Sampler
-    SpectraVoice
-    Amplifier
-    Compressor
-    DC Blocker
-    Delay
-    Distortion
-    Echo
-    EQ
-    FFT
-    Filter
-    Filter Pro
-    Flanger
-    LFO
-    Loop
-    Modulator
-    Pitch shifter
-    Reverb
-    Vocal filter
-    Vibrato
-    WaveShaper
-    ADSR
-    Ctl2Note
-    Feedback
-    Glide
-    GPIO
-    MetaModule
-    MultiCtl
-    MultiSynth
-    Pitch2Ctl
-    Pitch Detector
-    Sound2Ctl
-    Velocity2Ctl
-MODULES
+my @modules = sv_get_all_module_types;
 
 sub class_name {
     my ( $name ) = @_;
