@@ -97,8 +97,7 @@ nobounds:
 
 for my $module_name ( keys %{ $module_data } ) {
     my $module = $module_data->{ $module_name };
-    my $pkg = meta::package->get( $module->{ class_name } );
-    my $meta = meta::package->get( $pkg );
+    my $meta = meta::package->get( $module->{ class_name } );
     $meta->add_symbol( '@ISA', ['Audio::SunVox::FFI::Module'] );
 
     for my $ctl_name ( keys %{ $module->{ ctls } } ) {
