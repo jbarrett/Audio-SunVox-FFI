@@ -58,7 +58,6 @@ nobounds:
 
 sub import {
     my ( $pkg, %cfg ) = @_;
-    use DDP; p @_;
     $default_scale = $cfg{ default_scale } if $cfg{ default_scale };
     __PACKAGE__->export_to_level( 1, @_ );
 }
