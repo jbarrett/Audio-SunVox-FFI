@@ -81,10 +81,6 @@ sub new {
     bless \%params, $class;
 }
 
-sub connect {
-    my ( $self, $module, $name ) = @_;
-}
-
 sub skip_bounds_checking {
     my ( $self, $val ) = @_;
     $self->{ skip_bounds_checking } = $val if defined $val;
