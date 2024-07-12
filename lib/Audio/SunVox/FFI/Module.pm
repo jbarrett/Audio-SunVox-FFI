@@ -97,7 +97,13 @@ sub num { shift->{ num } }
 
 sub slot { shift->{ slot } }
 
+sub connect_to {
+    my ( $self, @modules ) = @_;
+    $self->slot->lock;
+    sv_connect_module( $self->slot->num, $self->num, $modules[0]->num );
+    return ( $self, @modules );
 }
+*connect = \&connect_to;
 
 for my $module_name ( keys %{ $module_data } ) {
     my $module = $module_data->{ $module_name };
