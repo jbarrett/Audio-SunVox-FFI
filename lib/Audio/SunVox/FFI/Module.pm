@@ -131,3 +131,11 @@ package Output {
 }
 
 1;
+
+__END__
+
+=head1 Module and Method Reference
+
+MODULE_REFS_HERE
+
+=cut
