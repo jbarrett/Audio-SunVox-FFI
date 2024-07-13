@@ -10,17 +10,12 @@ no warnings 'meta::experimental';
 my $meta = meta::get_this_package;
 
 use JSON::PP qw/ decode_json /;
-use File::Share qw/ dist_file /;
 use Carp qw/ carp croak /;
 use Audio::SunVox::FFI ':all';
+use Audio::SunVox::FFI::ModuleData;
 use Audio::SunVox::FFI::Slot;
 
-my $json = dist_file('Audio::SunVox::FFI', 'modules.json');
-my $module_data = decode_json do {
-    open my $fh, '<', $json or die "Cannot open $json";
-    local $/ = undef;
-    <$fh>;
-};
+my $module_data = Audio::SunVox::FFI::ModuleData::_module_data;
 
 my $scales = {
     real => 0,
@@ -135,6 +130,6 @@ __END__
 
 =head1 Module and Method Reference
 
-MODULE_REFS_HERE
+See L<Audio::SunVox::FFI::ClassReference>
 
 =cut
