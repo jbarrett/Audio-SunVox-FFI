@@ -9,7 +9,6 @@ use meta;
 no warnings 'meta::experimental';
 my $meta = meta::get_this_package;
 
-use JSON::PP qw/ decode_json /;
 use Carp qw/ carp croak /;
 use Audio::SunVox::FFI ':all';
 use Audio::SunVox::FFI::ModuleData;
