@@ -2,9 +2,13 @@ use strict;
 use warnings;
 package Audio::SunVox::FFI::ModuleData;
 
+# ABSTRACT: Module data and parameters - used to build this distribution.
+
 use Carp qw/ croak carp /;
 use FindBin;
 use Audio::SunVox::FFI ':all';
+
+our $VERSION = '0.00';
 
 my @modules = map { s/^\s*//; $_ } split /[\n\r]+\s*/, <<'MODULES';
     Analog generator

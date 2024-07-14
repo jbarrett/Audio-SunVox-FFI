@@ -228,6 +228,7 @@ my @export_binds     = ( sort keys %{ $binds } );
 our @EXPORT_OK       = ( @export_constants, @export_binds, 'sv_get_all_module_types' );
 our %EXPORT_TAGS     = ( all => \@EXPORT_OK, constants => \@export_constants, binds => \@export_binds );
 
+# Ensure the data is created before a user sv_init() call
 require Audio::SunVox::FFI::ModuleData;
 Audio::SunVox::FFI::ModuleData::_module_data(
     "I understand that this will break my patch"

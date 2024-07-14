@@ -1,5 +1,7 @@
 package Audio::SunVox::FFI::Module;
 
+# ABSTRACT: Objects for SunVox Modules
+
 use strict;
 use warnings;
 
@@ -13,6 +15,8 @@ use Carp qw/ carp croak /;
 use Audio::SunVox::FFI ':all';
 use Audio::SunVox::FFI::ModuleData;
 use Audio::SunVox::FFI::Slot;
+
+our $VERSION = '0.00';
 
 my $module_data = Audio::SunVox::FFI::ModuleData::_module_data;
 
@@ -71,7 +75,8 @@ sub module {
 sub new {
     my ( $class, %params ) = @_;
     $params{ slot } //= Audio::SunVox::FFI::Slot->get_last;
-    bless \%params, $class;
+    my $self = bless \%params, $class;
+    $self->add_to_slot( $params{ name } );
 }
 
 sub skip_bounds_checking {
@@ -99,6 +104,14 @@ for my $module_name ( keys %{ $module_data } ) {
     my $module = $module_data->{ $module_name };
     my $meta = meta::package->get( $module->{ class_name } );
     $meta->add_symbol( '@ISA', ['Audio::SunVox::FFI::Module'] );
+
+     $meta->add_symbol( '&get_type', sub{ $module_name } );
+     $meta->add_symbol( '&add_to_slot', sub {
+             my ( $self, $name ) = @_;
+             $self->{ num } = $self->slot->add_module( $module_name, $name );
+             $self;
+         }
+     );
 
     for my $ctl_name ( keys %{ $module->{ ctls } } ) {
         my $ctl = $module->{ ctls }->{ $ctl_name };

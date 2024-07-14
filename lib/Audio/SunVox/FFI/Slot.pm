@@ -1,7 +1,11 @@
 package Audio::SunVox::FFI::Slot;
 
+# ABSTRACT: Object representing a SunVox Slot.
+
 use strict;
 use warnings;
+
+our $VERSION = '0.00';
 
 use Carp qw/ carp croak /;
 use Audio::SunVox::FFI ':all';
@@ -61,6 +65,7 @@ sub new {
     croak "Error initialising : $init" if $init < 0;
     $initialised = 1;
 
+    sv_open_slot( $slot );
     $params{ num } = $slot;
 
     my $self = bless \%params, $class;
