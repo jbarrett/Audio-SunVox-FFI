@@ -76,7 +76,8 @@ sub new {
     my ( $class, %params ) = @_;
     $params{ slot } //= Audio::SunVox::FFI::Slot->get_last;
     my $self = bless \%params, $class;
-    $self->add_to_slot( $params{ name } );
+    $self->add_to_slot( $params{ name } ) unless $self->{ in_slot };
+    $self;
 }
 
 sub skip_bounds_checking {
@@ -100,18 +101,72 @@ sub connect_to {
 }
 *connect = \&connect_to;
 
+sub disconnect {
+    my ( $self, $module ) = @_;
+    sv_disconnect_module( $self->num, $module->num );
+}
+
+sub send_event {
+    my ( $self, $track, $note, $vel, $ctl, $val ) = @_;
+    $ctl //= 0;
+    sv_send_event( $self->slot->num, $track, $note, $vel, $self->num + 1, $ctl << 8, $val );
+}
+
+sub note_on {
+    my ( $self, $track, $note, $vel ) = @_;
+    sv_send_event( $self->slot->num, $track, $note, $vel, $self->num + 1 );
+}
+
+sub note_off {
+    my ( $self, $track ) = @_;
+    sv_send_event( $self->slot->num, $track, NOTECMD_NOTE_OFF, 0, $self->num + 1 );
+}
+
+sub set_pitch {
+    my ( $self, $track, $freq, $vel ) = @_;
+    my $pitch = 30720 - ( log( $freq / 16.333984375 ) / log( 2 ) ) * 3072;
+    sv_send_event( $self->slot->num, $track, NOTECMD_SET_PITCH, $vel, $self->num + 1, 0, $pitch );
+}
+
+sub remove {
+    my ( $self ) = @_;
+    $self->slot->remove_module( $self );
+}
+
 for my $module_name ( keys %{ $module_data } ) {
     my $module = $module_data->{ $module_name };
     my $meta = meta::package->get( $module->{ class_name } );
     $meta->add_symbol( '@ISA', ['Audio::SunVox::FFI::Module'] );
 
-     $meta->add_symbol( '&get_type', sub{ $module_name } );
-     $meta->add_symbol( '&add_to_slot', sub {
-             my ( $self, $name ) = @_;
-             $self->{ num } = $self->slot->add_module( $module_name, $name );
-             $self;
-         }
-     );
+    $meta->add_symbol( '&get_type', sub{ $module_name } );
+    $meta->add_symbol( '&add_to_slot', sub {
+            my ( $self, $name ) = @_;
+            $self->{ num } = $self->slot->add_module( $module_name, $name );
+            $self;
+        }
+    );
+
+    if ( $module_name eq 'MetaModule' ) {
+        $meta->add_symbol( '&metamodule_load', sub {
+            my ( $self, $filename ) = @_;
+            # TODO: Figure out if this needs a new slot for each module
+            sv_metamodule_load( $self->slot->num, $self->num, $filename );
+        } );
+    }
+
+    if ( $module_name eq 'Sampler' ) {
+        $meta->add_symbol( '&sampler_load', sub {
+            my ( $self, $filename, $slot ) = @_;
+            sampler_load( $self->slot->num, $self->num, $filename, $slot );
+        } );
+    }
+
+    if ( $module_name eq 'Vorbis player' ) {
+        $meta->add_symbol( '&vplayer_load', sub {
+            my ( $self, $filename ) = @_;
+            sv_vplayer_load( $self->slot->num, $self->num, $filename );
+        } );
+    }
 
     for my $ctl_name ( keys %{ $module->{ ctls } } ) {
         my $ctl = $module->{ ctls }->{ $ctl_name };

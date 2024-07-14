@@ -9,6 +9,8 @@ our $VERSION = '0.00';
 
 use Carp qw/ carp croak /;
 use Audio::SunVox::FFI ':all';
+use Audio::SunVox::FFI::Module;
+use Audio::SunVox::FFI::ModuleData;
 
 my $slot = -1;
 my $first;
@@ -87,12 +89,11 @@ sub add_module {
     $module;
 }
 
-sub save {
-    my ( $self, $filename ) = @_;
-}
-
-sub load {
-    my ( $self, $filename ) = @_;
+sub remove_module {
+    my ( $self, $module ) = @_;
+    $self->lock;
+    sv_remove_module( $self->num, $module->num );
+    $self->unlock;
 }
 
 sub num { shift->{ num } }
@@ -106,5 +107,129 @@ sub get_last {
     $last //= shift->new;
 }
 *last = \&get_last;
+
+sub save {
+    my ( $self, $filename ) = @_;
+    sv_save( $self->num, $filename );
+}
+
+sub load {
+    my ( $self, $filename ) = @_;
+    sv_load( $self->num, $filename );
+}
+
+sub audio_callback { ... }
+sub audio_callback2 { ... }
+
+sub play {
+    my ( $self ) = @_;
+    sv_play( $self->num );
+}
+
+sub play_from_beginning {
+    my ( $self ) = @_;
+    sv_play_from_beginning( $self->num );
+}
+
+sub pause {
+    my ( $self ) = @_;
+    sv_pause( $self->num );
+}
+
+sub resume {
+    my ( $self ) = @_;
+    sv_resume( $self->num );
+}
+
+sub sync_resume {
+    my ( $self ) = @_;
+    sv_sync_resume( $self->num );
+}
+
+sub set_autostop {
+    my ( $self, $autostop ) = @_;
+    $autostop = $autostop ? 1 : 0;
+    sv_set_autostop( $self->num, $autostop );
+}
+
+sub get_autostop {
+    my ( $self ) = @_;
+    sv_end_of_song( $self->num );
+}
+
+sub rewind {
+    my ( $self, $line ) = @_;
+    $line //= 0;
+    sv_rewind( $self->num, $line );
+}
+
+sub volume {
+    my ( $self, $vol ) = @_;
+    sv_volume( $self->num, $vol );
+}
+
+sub mute { shift->volume( 0 ); }
+
+sub get_current_line {
+    my ( $self ) = @_;
+    sv_get_current_line( $self->num );
+}
+
+# TODO: Add fixed point wrapper to FFI lib
+sub get_current_line2 { ... }
+
+sub get_name {
+    my ( $self ) = @_;
+    sv_get_song_name( $self->num );
+}
+
+sub set_name {
+    my ( $self, $name ) = @_;
+    sv_set_song_name( $self->num, $name );
+}
+
+sub get_bpm {
+    my ( $self ) = @_;
+    sv_get_song_bpm( $self->num );
+}
+
+sub get_tpl {
+    my ( $self ) = @_;
+    sv_get_song_tpl( $self->num );
+}
+
+sub get_length_frames {
+    my ( $self ) = @_;
+    sv_get_song_length_frames( $self->num );
+}
+
+sub get_length_lines {
+    my ( $self ) = @_;
+    sv_get_song_length_lines( $self->num );
+}
+
+# TODO: Looks like it needs a wrapper
+sub get_time_map { ... }
+
+sub set_event_t {
+    my ( $self, $set, $t ) = @_;
+    sv_set_event_t( $self->num, $set, $t )
+}
+
+sub get_module_type {
+    my ( $self, $module ) = @_;
+    my $num = ref $module
+        ? $module->num
+        : $module;
+    sv_get_module_type( $self->num, $num );
+}
+
+sub load_module {
+    my ( $self, $filename ) = @_;
+    use DDP; p @_;
+    my $module = sv_load_module( $self->num, $filename, int rand( 1024 ), int rand( 1024 ) );
+    my $type = $self->get_module_type( $module );
+    Audio::SunVox::FFI::ModuleData::_class_name( $type )->new( in_slot => 1, slot => $self, num => $module );
+}
 
 1;
