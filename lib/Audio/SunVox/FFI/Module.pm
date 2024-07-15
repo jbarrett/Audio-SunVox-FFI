@@ -74,6 +74,10 @@ sub module {
 
 sub new {
     my ( $class, %params ) = @_;
+    if ( $class eq 'Audio::SunVox::FFI::Module' ) {
+        carp "Audio::SunVox::FFI::Module should not be instantiated directly";
+        return -1;
+    }
     $params{ slot } //= Audio::SunVox::FFI::Slot->get_last;
     my $self = bless \%params, $class;
     $self->add_to_slot( $params{ name } ) unless $self->{ in_slot };
