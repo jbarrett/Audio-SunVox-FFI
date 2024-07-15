@@ -96,6 +96,8 @@ sub num { shift->{ num } }
 
 sub slot { shift->{ slot } }
 
+sub default_scale { shift->{ default_scale } }
+
 sub connect_to {
     my ( $self, @modules ) = @_;
     $self->slot->lock;
@@ -122,12 +124,13 @@ sub note_on {
 }
 
 sub note_off {
-    my ( $self, $track ) = @_;
-    sv_send_event( $self->slot->num, $track, NOTECMD_NOTE_OFF, 0, $self->num + 1 );
+    my ( $self, $track, $note ) = @_;
+    sv_send_event( $self->slot->num, $track, NOTECMD_NOTE_OFF, $note, $self->num + 1 );
 }
 
 sub set_pitch {
     my ( $self, $track, $freq, $vel ) = @_;
+    # ¯\_(ツ)_/¯
     my $pitch = 30720 - ( log( $freq / 16.333984375 ) / log( 2 ) ) * 3072;
     sv_send_event( $self->slot->num, $track, NOTECMD_SET_PITCH, $vel, $self->num + 1, 0, $pitch );
 }
@@ -135,6 +138,127 @@ sub set_pitch {
 sub remove {
     my ( $self ) = @_;
     $self->slot->remove_module( $self );
+}
+
+sub get_flags {
+    my ( $self ) = @_;
+    sv_get_module_flags( $self->slot->num, $self->num );
+}
+
+# TODO: Wrapper?
+sub get_outputs {
+    my ( $self ) = @_;
+    sv_get_module_outputs( $self->slot->num, $self->num );
+}
+
+# TODO: Wrapper?
+sub get_inputs {
+    my ( $self ) = @_;
+    sv_get_module_inputs( $self->slot->num, $self->num );
+}
+
+sub get_type {
+    my ( $self ) = @_;
+    sv_get_module_type( $self->slot->num, $self->num );
+}
+
+sub get_name {
+    my ( $self ) = @_;
+    sv_get_module_name( $self->slot->num, $self->num );
+}
+
+sub set_name {
+    my ( $self ) = @_;
+    sv_set_module_name( $self->slot->num, $self->num );
+}
+
+sub get_xy {
+    my ( $self ) = @_;
+    sv_get_module_xy( $self->slot->num, $self->num );
+}
+
+sub set_xy {
+    my ( $self ) = @_;
+    sv_set_module_xy( $self->slot->num, $self->num );
+}
+
+sub get_color {
+    my ( $self ) = @_;
+    sv_get_module_color( $self->slot->num, $self->num );
+}
+
+sub set_color {
+    my ( $self ) = @_;
+    sv_set_module_color( $self->slot->num, $self->num );
+}
+
+sub get_finetune {
+    my ( $self ) = @_;
+    sv_get_module_finetune( $self->slot->num, $self->num );
+}
+
+sub set_finetune {
+    my ( $self ) = @_;
+    sv_set_module_finetune( $self->slot->num, $self->num );
+}
+
+sub set_relnote {
+    my ( $self ) = @_;
+    sv_set_module_relnote( $self->slot->num, $self->num );
+}
+
+sub get_scope { ... }
+sub get_scope2 { ... }
+
+sub curve { ... }
+
+sub get_number_of_ctls {
+    my ( $self ) = @_;
+    sv_get_number_of_module_ctls( $self->slot, $self->num );
+}
+
+sub get_ctl_name {
+    my ( $self, $ctl ) = @_;
+    sv_get_module_ctl_name( $self->slot, $self->num, $ctl );
+}
+
+sub get_ctl_value {
+    my ( $self, $ctl, $scale ) = @_;
+    $scale //= $self->{ default_scale };
+    sv_get_module_ctl_value( $self->slot, $self->num, $ctl, $scale );
+}
+
+sub set_ctl_value {
+    my ( $self, $ctl, $val, $scale ) = @_;
+    $scale //= $self->{ default_scale };
+    sv_set_module_ctl_value( $self->slot, $self->num, $ctl, $scale );
+}
+
+sub get_ctl_min {
+    my ( $self, $ctl, $scale ) = @_;
+    $scale //= $self->{ default_scale };
+    sv_get_module_ctl_min( $self->slot, $self->num, $ctl, $scale );
+}
+
+sub get_ctl_max {
+    my ( $self, $ctl, $scale ) = @_;
+    $scale //= $self->{ default_scale };
+    sv_get_module_ctl_max( $self->slot, $self->num, $ctl, $scale );
+}
+
+sub get_ctl_offset {
+    my ( $self, $ctl ) = @_;
+    sv_get_module_ctl_offset( $self->slot, $self->num, $ctl );
+}
+
+sub get_ctl_type {
+    my ( $self, $ctl ) = @_;
+    sv_get_module_ctl_type( $self->slot, $self->num, $ctl );
+}
+
+sub get_ctl_group {
+    my ( $self, $ctl ) = @_;
+    sv_get_module_ctl_group( $self->slot, $self->num, $ctl );
 }
 
 for my $module_name ( keys %{ $module_data } ) {

@@ -96,6 +96,33 @@ sub remove_module {
     $self->unlock;
 }
 
+sub remove_pattern {
+    my ( $self, $pattern ) = @_;
+    $self->lock;
+    sv_remove_pattern( $self->num, $pattern->num );
+    $self->unlock;
+}
+
+sub add_pattern {
+    my ( $self, $tracks, $lines, $name, $clone, $x, $y, $seed ) = @_;
+    $tracks //= 4;
+    $lines //= 32;
+    $clone //= -1;
+    $seed //= int rand( 2_147_483_648 );
+    $x //= int rand( 1_024 );
+    $y //= int rand( 1_024 );
+    $name //= 'Pattern' . int rand( 999_999 );
+    $self->lock;
+    my $pattern = sv_new_pattern( $self->num, );
+    $self->unlock;
+    $pattern;
+}
+
+sub get_number_of_patterns {
+    my ( $self ) = @_;
+    sv_get_number_of_patterns( $self->num );
+}
+
 sub num { shift->{ num } }
 
 sub get_first {
@@ -178,6 +205,11 @@ sub get_current_line {
 # TODO: Add fixed point wrapper to FFI lib
 sub get_current_line2 { ... }
 
+sub get_current_signal_level {
+    my ( $self, $channel ) = @_;
+    sv_get_current_signal_level( $self->num, $channel );
+}
+
 sub get_name {
     my ( $self ) = @_;
     sv_get_song_name( $self->num );
@@ -226,10 +258,40 @@ sub get_module_type {
 
 sub load_module {
     my ( $self, $filename ) = @_;
-    use DDP; p @_;
     my $module = sv_load_module( $self->num, $filename, int rand( 1024 ), int rand( 1024 ) );
     my $type = $self->get_module_type( $module );
-    Audio::SunVox::FFI::ModuleData::_class_name( $type )->new( in_slot => 1, slot => $self, num => $module );
+    return $module > 0 # NO
+        ? Audio::SunVox::FFI::ModuleData::_class_name( $type )->new( in_slot => 1, slot => $self, num => $module )
+        : undef;
+}
+
+sub get_number_of_modules {
+    my ( $self ) = @_;
+    sv_get_number_of_modules( $self->num );
+}
+
+sub find_module {
+    my ( $self, $name ) = @_;
+    my $module = sv_find_module( $self->num, $name );
+    my $type = $self->get_module_type( $module );
+    return $module > 0
+        ? Audio::SunVox::FFI::ModuleData::_class_name( $type )->new( in_slot => 1, slot => $self, num => $module )
+        : undef;
+}
+
+sub find_pattern {
+    my ( $self, $name ) = @_;
+    my $pattern = sv_find_pattern( $self->num, $name );
+    Audio::SunVox::FFI::Pattern->new( in_slot => 1, slot => $self, num => $pattern );
+}
+
+sub get_ticks {
+    sv_get_ticks();
+}
+
+sub get_log {
+    my ( $self, $bytes ) = @_;
+    sv_get_log( $bytes );
 }
 
 1;
