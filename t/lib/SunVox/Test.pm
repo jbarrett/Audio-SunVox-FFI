@@ -17,6 +17,6 @@ sub drain {
 }
 
 use parent 'Exporter';
-our @EXPORT = ( 't' );
+our @EXPORT = ( qw/ t call_ok / );
 
 sub t { __PACKAGE__ }

@@ -1,13 +1,10 @@
 use strict;
 use warnings;
 
+use Test2::V0;
 use Audio::SunVox::FFI ':all';
-use Time::HiRes qw/ usleep /;
 use Test::Lib;
 use SunVox::Test;
-use Test2::V0;
-
-sub call_ok { ok $_[0] >= 0, $_[1]; $_[0] }
 
 t->init;
 
