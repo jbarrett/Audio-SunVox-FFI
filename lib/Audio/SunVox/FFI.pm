@@ -48,6 +48,7 @@ package Audio::SunVox::FFI;
 use base qw/ Exporter /;
 
 use FFI::Platypus 2.00;
+use FFI::Platypus::Memory qw/ malloc free /;
 use FFI::CheckLib 0.25 qw/ find_lib_or_die /;
 use Carp qw/ croak carp /;
 
@@ -178,16 +179,17 @@ BEGIN {
         sv_get_number_of_modules        => [ [qw/ int /]                                    => 'int' ],
         sv_find_module                  => [ [qw/ int string /]                             => 'int' ],
         sv_get_module_flags             => [ [qw/ int int /]                                => 'uint32' ],
-        sv_get_module_inputs            => [ [qw/ int int /]                                => 'int*' ],
-        sv_get_module_outputs           => [ [qw/ int int /]                                => 'int*' ],
+        sv_get_module_inputs            => [ [qw/ int int /]                                => 'int*',   \&_get_module_inputs ],
+        sv_get_module_outputs           => [ [qw/ int int /]                                => 'int*',   \&_get_module_outputs ],
         sv_get_module_type              => [ [qw/ int int /]                                => 'string' ],
-        sv_get_module_xy                => [ [qw/ int int /]                                => 'uint32' ],
-        sv_get_module_color             => [ [qw/ int int /]                                => 'int' ],
-        sv_set_module_color             => [ [qw/ int int int /]                            => 'int' ],
-        sv_get_module_finetune          => [ [qw/ int int /]                                => 'uint32' ],
+        sv_get_module_xy                => [ [qw/ int int /]                                => 'uint32', \&_get_module_xy ],
+        sv_set_module_xy                => [ [qw/ int int int int /]                        => 'uint32', ],
+        sv_get_module_color             => [ [qw/ int int /]                                => 'int',    \&_get_module_color ],
+        sv_set_module_color             => [ [qw/ int int int /]                            => 'int',    \&_set_module_color ],
+        sv_get_module_finetune          => [ [qw/ int int /]                                => 'uint32', \&_get_module_finetune ],
         sv_set_module_finetune          => [ [qw/ int int int /]                            => 'int' ],
         sv_set_module_relnote           => [ [qw/ int int int /]                            => 'int' ],
-        sv_get_module_scope2            => [ [qw/ int int int sint16* uint32 /]             => 'uint32' ],
+        sv_get_module_scope2            => [ [qw/ int int int sint16* uint32 /]             => 'uint32', \&_get_module_scope ],
         sv_module_curve                 => [ [qw/ int int int float* int int/]              => 'int' ],
         sv_get_number_of_module_ctls    => [ [qw/ int int /]                                => 'int' ],
         sv_get_module_ctl_name          => [ [qw/ int int int /]                            => 'string' ],
@@ -224,9 +226,70 @@ use constant $constants;
 _bind;
 
 my @export_constants = ( sort keys %{ $constants } );
-my @export_binds     = ( sort keys %{ $binds } );
+my @export_binds     = ( sort keys %{ $binds }, 'sv_get_module_scope' );
 our @EXPORT_OK       = ( @export_constants, @export_binds, 'sv_get_all_module_types' );
 our %EXPORT_TAGS     = ( all => \@EXPORT_OK, constants => \@export_constants, binds => \@export_binds );
+
+*sv_get_module_scope = \&sv_get_module_scope2;
+
+sub _get_module_xy {
+    my $sub = shift;
+    my $xy = $sub->( @_ );
+    my $x = $xy & 0xFFFF;
+    $x -= 0x10000 if $x & 0x8000;
+    my $y = $xy >> 16;
+    $y -= 0x10000 if $y & 0x8000;
+    ( $x, $y );
+}
+
+sub _get_module_color {
+    my $sub = shift;
+    my $rgb = $sub->( @_ );
+    my $red   = $rgb & 0xFF;
+    my $green = $rgb >> 8 & 0xFF;
+    my $blue  = $rgb >> 16 & 0xFF;
+    ( $red, $green, $blue );
+}
+
+sub _set_module_color {
+    my ( $sub, $slot, $module, $red, $green, $blue ) = @_;
+    my $rgb = $red | $green << 8 | $blue << 16;
+    $sub->( $slot, $module, $rgb );
+}
+
+sub _get_module_finetune {
+    my $sub = shift;
+    my $finetune = $sub->( @_ );
+    my $relnote = $finetune >> 16 & 0xFFFF;
+    $finetune = $finetune & 0xFFFF;
+    ( $finetune, $relnote );
+}
+
+sub _get_module_outputs {
+    my ( $sub, $slot, $module ) = @_;
+    my $flags = sv_get_module_flags( $slot, $module );
+    my $size = ( $flags & SV_MODULE_OUTPUTS_MASK ) >> SV_MODULE_OUTPUTS_OFF;
+    $ffi->cast( 'int*' => "int[$size]", $sub->( $slot, $module ) );
+}
+
+sub _get_module_inputs {
+    my ( $sub, $slot, $module ) = @_;
+    my $flags = sv_get_module_flags( $slot, $module );
+    my $size = ( $flags & SV_MODULE_INPUTS_MASK ) >> SV_MODULE_INPUTS_OFF;
+    $ffi->cast( 'int*' => "int[$size]", $sub->( $slot, $module ) );
+}
+
+sub _get_module_scope {
+    my ( $sub, $slot, $module, $channel, $samples ) = @_;
+    my $buf = malloc $samples * 2;
+    my @samples;
+    $samples = $sub->( $slot, $module, $channel, $buf, $samples );
+    goto free unless $samples;
+    @samples = $ffi->cast( 'opaque' => "sint16[$samples]", $buf );
+free:
+    free $buf;
+    @samples;
+}
 
 # Ensure the data is created before a user sv_init() call
 require Audio::SunVox::FFI::ModuleData;
@@ -330,6 +393,16 @@ envelopes in some cases).
 
 Any set of modules hoping to produce a sound must ultimately be connected to the Output
 module.
+
+=head1 Functions Which Diverge from SunVox Docs
+
+=head2 sv_get_module_xy
+
+=head2 sv_get_module_color
+
+=head2 sv_set_module_color
+
+=head2 sv_get_module_finetune
 
 =head1 CONTRIBUTING
 
