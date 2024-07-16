@@ -100,7 +100,7 @@ sub num { shift->{ num } }
 
 sub slot { shift->{ slot } }
 
-sub default_scale { shift->{ default_scale } }
+sub default_scale { shift->scale( $default_scale ) }
 
 sub connect_to {
     my ( $self, @modules ) = @_;
