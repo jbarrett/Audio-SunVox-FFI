@@ -282,13 +282,11 @@ sub _get_module_inputs {
 sub _get_module_scope {
     my ( $sub, $slot, $module, $channel, $samples ) = @_;
     my $buf = malloc $samples * 2;
-    my @samples;
+    my @scope;
     $samples = $sub->( $slot, $module, $channel, $buf, $samples );
-    goto free unless $samples;
-    @samples = $ffi->cast( 'opaque' => "sint16[$samples]", $buf );
-free:
+    @scope = $ffi->cast( 'opaque' => "sint16[$samples]", $buf ) if $samples;
     free $buf;
-    @samples;
+    @scope;
 }
 
 # Ensure the data is created before a user sv_init() call
