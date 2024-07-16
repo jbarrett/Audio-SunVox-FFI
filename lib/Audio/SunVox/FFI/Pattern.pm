@@ -7,9 +7,15 @@ use warnings;
 
 our $VERSION = '0.00';
 
+use meta;
+no warnings 'meta::experimental';
+my $meta = meta::get_this_package;
+
 use Carp qw/ carp croak /;
 use Audio::SunVox::FFI ':all';
 use Audio::SunVox::FFI::Slot;
+
+use namespace::autoclean;
 
 sub new {
     my ( $class, %params ) = @_;
@@ -30,80 +36,51 @@ sub add_to_slot {
     $self;
 }
 
-sub get_x {
-    my ( $self ) = @_;
-    get_pattern_x( $self->slot->num, $self->num );
+my $get_dispatch = {
+    name   => \&sv_set_pattern_name,
+    data   => \&sv_get_pattern_data,
+    size   => sub { ( sv_get_pattern_tracks( @_ ), sv_get_pattern_lines( @_ ) ) },
+    xy     => sub { ( sv_get_pattern_x( @_ ), sv_get_pattern_y( @_ ) ) },
+};
+
+my $set_dispatch = {
+    name => sub { sv_lock_slot( $_[0] ) ; my $r = sv_set_pattern_name( @_ ) ; sv_unlock_slot( $_[0] ); $r },
+    data => sub { sv_lock_slot( $_[0] ) ; my $r = sv_set_pattern_data( @_ ) ; sv_unlock_slot( $_[0] ); $r },
+    size => sub { sv_lock_slot( $_[0] ) ; my $r = sv_set_pattern_size( @_ ) ; sv_unlock_slot( $_[0] ); $r },
+    xy   => sub { sv_lock_slot( $_[0] ) ; my $r = sv_set_pattern_xy( @_ ) ; sv_unlock_slot( $_[0] ); $r },
+};
+
+for my $method (qw/ name data size xy /) {
+    $meta->add_symbol( "&$method", sub {
+        my ( $self, @params ) = @_;
+        return $set_dispatch->{ $method }->( $self->slot->num, $self->num, @params )
+            if @params;
+        $get_dispatch->{ $method }->( $self->slot->num, $self->num );
+    } );
 }
 
-sub get_y {
-    my ( $self ) = @_;
-    get_pattern_y( $self->slot->num, $self->num );
+sub x {
+    my ( $self, $x ) = @_;
+    return $self->xy( $x, $self->y ) if defined $x;
+    sv_get_pattern_x( $self->slot->num, $self->num );
 }
 
-sub get_xy {
-    my ( $self ) = @_;
-    (
-        get_pattern_x( $self->slot->num, $self->num ),
-        get_pattern_y( $self->slot->num, $self->num ),
-    )
+sub y {
+    my ( $self, $y ) = @_;
+    return $self->xy( $self->x, $y ) if defined $y;
+    sv_get_pattern_y( $self->slot->num, $self->num );
 }
 
-sub set_xy {
-    my ( $self, $x, $y ) = @_;
-    sv_set_pattern_xy( $self->slot->num, $self->num, $x, $y );
+sub tracks {
+    my ( $self, $tracks ) = @_;
+    return $self->size( $tracks, $self->lines ) if defined $tracks;
+    sv_get_pattern_tracks( $self->slot->num, $self->num );
 }
 
-sub get_tracks {
-    my ( $self ) = @_;
-    get_pattern_tracks( $self->slot->num, $self->num );
-}
-
-sub get_lines {
-    my ( $self ) = @_;
-    get_pattern_lines( $self->slot->num, $self->num );
-}
-
-sub get_size {
-    my ( $self ) = @_;
-    (
-        get_pattern_tracks( $self->slot->num, $self->num ),
-        get_pattern_lines( $self->slot->num, $self->num ),
-    )
-}
-
-sub set_size {
-    my ( $self, $tracks, $lines ) = @_;
-    sv_set_pattern_size( $self->slot->num, $self->num, $tracks, $lines );
-}
-
-sub get_name {
-    my ( $self ) = @_;
-    get_pattern_name( $self->slot->num, $self->num );
-}
-
-sub set_name {
-    my ( $self, $name ) = @_;
-    set_pattern_name( $self->slot->num, $self->num, $name );
-}
-
-sub get_data {
-    my ( $self ) = @_;
-    get_pattern_data( $self->slot->num, $self->num );
-}
-
-sub set_data {
-    my ( $self, @bytes ) = @_;
-    set_pattern_data( $self->slot->num, $self->num, @bytes );
-}
-
-sub get_event {
-    my ( $self, $track, $line, $col ) = @_;
-    get_pattern_data( $self->slot->num, $self->num, $track, $line, $col );
-}
-
-sub set_event {
-    my ( $self, $track, $line, $nn, $vv, $mm, $ccee, $xxyy ) = @_;
-    set_pattern_event( $self->slot->num, $self->num, $track, $line, $nn, $vv, $mm, $ccee, $xxyy );
+sub lines {
+    my ( $self, $lines ) = @_;
+    return $self->size( $self->tracks, $lines ) if defined $lines;
+    sv_get_pattern_lines( $self->slot->num, $self->num );
 }
 
 sub mute {
