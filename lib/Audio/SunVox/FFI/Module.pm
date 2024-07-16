@@ -34,6 +34,10 @@ sub _ctl {
     my ( $min, $max, $method_name ) = @{ $ctl }{ "min_$scale", "max_$scale", 'method_name' };
     sub {
         my ( $self, $value ) = @_;
+
+        return sv_get_module_ctl_value( $self->slot->num, $self->num, $ctl->{ ctl_num }, $self->scale( $scale ) )
+            unless defined $value;
+
         goto nobounds if $self->skip_bounds_checking;
         if ( $value < $min ) {
             carp "Value $value below minimum of $min for $ctl->{ method_name } - setting to $min";
