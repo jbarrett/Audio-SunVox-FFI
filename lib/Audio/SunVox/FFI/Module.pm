@@ -132,7 +132,7 @@ sub note_off {
     sv_send_event( $self->slot->num, $track, NOTECMD_NOTE_OFF, $note, $self->num + 1 );
 }
 
-sub set_pitch {
+sub pitch {
     my ( $self, $track, $freq, $vel ) = @_;
     # ¯\_(ツ)_/¯
     my $pitch = 30720 - ( log( $freq / 16.333984375 ) / log( 2 ) ) * 3072;
@@ -279,7 +279,7 @@ for my $module_name ( keys %{ $module_data } ) {
     );
 
     if ( $module_name eq 'MetaModule' ) {
-        $meta->add_symbol( '&metamodule_load', sub {
+        $meta->add_symbol( '&load', sub {
             my ( $self, $filename ) = @_;
             # TODO: Figure out if this needs a new slot for each module
             sv_metamodule_load( $self->slot->num, $self->num, $filename );
@@ -287,14 +287,14 @@ for my $module_name ( keys %{ $module_data } ) {
     }
 
     if ( $module_name eq 'Sampler' ) {
-        $meta->add_symbol( '&sampler_load', sub {
+        $meta->add_symbol( '&load', sub {
             my ( $self, $filename, $slot ) = @_;
             sampler_load( $self->slot->num, $self->num, $filename, $slot );
         } );
     }
 
     if ( $module_name eq 'Vorbis player' ) {
-        $meta->add_symbol( '&vplayer_load', sub {
+        $meta->add_symbol( '&load', sub {
             my ( $self, $filename ) = @_;
             sv_vplayer_load( $self->slot->num, $self->num, $filename );
         } );
