@@ -29,6 +29,112 @@ our $default_scale = 'disp';
 
 use namespace::clean;
 
+my $get_dispatch = {
+    flags      => \&sv_get_module_flags,
+    outputs    => \&sv_get_module_outputs,
+    inputs     => \&sv_get_module_inputs,
+    type       => \&sv_get_module_type,
+    name       => \&sv_get_module_name,
+    xy         => \&sv_get_module_xy,
+    color      => \&sv_get_module_color,
+    finetune   => sub { my ( $finetune, $relnote ) = sv_get_module_finetune( @_ ); $finetune; },
+    relnote    => sub { my ( $finetune, $relnote ) = sv_get_module_finetune( @_ ); $relnote; },
+    ctl_name   => \&sv_get_module_ctl_name,
+    ctl_offset => \&sv_get_module_ctl_offset,
+    ctl_group  => \&sv_get_module_ctl_group,
+    ctl_type   => \&sv_get_module_ctl_type,
+    number_of_ctls => \&sv_get_number_of_module_ctls,
+};
+
+my $set_dispatch = {
+    name     => \&sv_set_module_name,
+    xy       => \&sv_set_module_xy,
+    color    => \&sv_set_module_color,
+    finetune => \&sv_set_module_finetune,
+    relnote  => \&sv_set_module_relnote,
+};
+
+for my $method ( keys %{ $get_dispatch } ) {
+    $meta->add_symbol( "&$method", sub {
+        my ( $self, @params ) = @_;
+        return $get_dispatch->{ $method }->( $self->slot->num, $self->num ) unless @params;
+        if ( ! ( my $prop = $set_dispatch->{ $method } ) ) {
+            carp "Read-only property: $prop";
+            return -1;
+        }
+        $set_dispatch->{ $method }->( $self->slot->num, $self->num, @params );
+    } );
+}
+
+sub ctl_min {
+    my ( $self, $ctl, $scale ) = @_;
+    $scale //= $self->default_scale;
+    sv_get_module_ctl_min( $self->slot->num, $self->num, $ctl, $scale );
+}
+
+sub ctl_max {
+    my ( $self, $ctl, $scale ) = @_;
+    $scale //= $self->default_scale;
+    sv_get_module_ctl_max( $self->slot->num, $self->num, $ctl, $scale );
+}
+
+=head2 ctl_value
+
+    $module->ctl_value( $ctl );
+    $module->ctl_value( $ctl, $new_value );
+    $module->ctl_value( 1 );
+    $module->ctl_value( 1, 0x7F );
+
+Uses default scale.
+
+=cut
+
+sub ctl_value {
+    my ( $self, $ctl, $val ) = @_;
+    my $scale = $self->default_scale;
+    return sv_set_module_ctl_value( $self->slot->num, $self->num, $ctl, $val, $scale )
+        if defined $val;
+    sv_get_module_ctl_value( $self->slot->num, $self->num, $ctl, $scale );
+}
+
+=head2 ctl_value_scaled
+
+    $module->ctl_value_scaled( $ctl, $scale );
+    $module->ctl_value_scaled( $ctl, $new_value, $scale );
+    $module->ctl_value_scaled( 1, 2 );
+    $module->ctl_value_scaled( 1, 0x7F, 2 );
+
+Uses passed scale
+
+=cut
+
+sub ctl_value_scaled {
+    my ( $self, $ctl, $val, $scale ) = ( @_ > 3 )
+        ? @_
+        : ( @_[0..1], undef, $_[2] );
+    return sv_set_module_ctl_value( $self->slot->num, $self->num, $ctl, $val, $scale )
+        if defined $val;
+    sv_get_module_ctl_value( $self->slot->num, $self->num, $ctl, $scale );
+}
+
+=head2 ctl_value_{real,hex,disp}
+
+    $module->ctl_value_disp( $ctl );
+    $module->ctl_value_disp( $ctl, $new_value );
+    $module->ctl_value_disp( 4, -128 );
+
+=cut
+
+for my $scale ( qw/ real hex disp /) {
+    $meta->add_symbol( "&ctl_value_$scale" , sub {
+        my ( $self, $ctl, $val ) = @_;
+        my $nscale = $self->scale( $scale );
+        return sv_set_module_ctl_value( $self->slot->num, $self->num, $ctl, $val, $self->scale( $scale ) )
+            if defined $val;
+        sv_get_module_ctl_value( $self->slot->num, $self->num, $ctl, $self->scale( $scale ) );
+    } );
+}
+
 sub _ctl {
     my ( $ctl, $scale ) = @_;
     my ( $min, $max, $method_name ) = @{ $ctl }{ "min_$scale", "max_$scale", 'method_name' };
@@ -65,7 +171,7 @@ sub import {
 }
 
 sub module {
-    my ( $type, $name, $slot ) = @_;
+    my ( $slot, $type, $name ) = @_;
     my $class = $module_data->{ $type }->{ class_name };
     croak "Unknown module type : $type" unless $class;
     $slot //= Audio::SunVox::FFI::Slot->get_last;
@@ -144,126 +250,12 @@ sub remove {
     $self->slot->remove_module( $self );
 }
 
-sub get_flags {
-    my ( $self ) = @_;
-    sv_get_module_flags( $self->slot->num, $self->num );
+sub scope {
+    my ( $self, $channel, $samples ) = @_;
+    sv_get_module_scope2( $self->slot->num, $self->num, $channel, $samples );
 }
-
-# TODO: Wrapper?
-sub get_outputs {
-    my ( $self ) = @_;
-    sv_get_module_outputs( $self->slot->num, $self->num );
-}
-
-# TODO: Wrapper?
-sub get_inputs {
-    my ( $self ) = @_;
-    sv_get_module_inputs( $self->slot->num, $self->num );
-}
-
-sub get_type {
-    my ( $self ) = @_;
-    sv_get_module_type( $self->slot->num, $self->num );
-}
-
-sub get_name {
-    my ( $self ) = @_;
-    sv_get_module_name( $self->slot->num, $self->num );
-}
-
-sub set_name {
-    my ( $self ) = @_;
-    sv_set_module_name( $self->slot->num, $self->num );
-}
-
-sub get_xy {
-    my ( $self ) = @_;
-    sv_get_module_xy( $self->slot->num, $self->num );
-}
-
-sub set_xy {
-    my ( $self ) = @_;
-    sv_set_module_xy( $self->slot->num, $self->num );
-}
-
-sub get_color {
-    my ( $self ) = @_;
-    sv_get_module_color( $self->slot->num, $self->num );
-}
-
-sub set_color {
-    my ( $self ) = @_;
-    sv_set_module_color( $self->slot->num, $self->num );
-}
-
-sub get_finetune {
-    my ( $self ) = @_;
-    sv_get_module_finetune( $self->slot->num, $self->num );
-}
-
-sub set_finetune {
-    my ( $self ) = @_;
-    sv_set_module_finetune( $self->slot->num, $self->num );
-}
-
-sub set_relnote {
-    my ( $self ) = @_;
-    sv_set_module_relnote( $self->slot->num, $self->num );
-}
-
-sub get_scope { ... }
-sub get_scope2 { ... }
 
 sub curve { ... }
-
-sub get_number_of_ctls {
-    my ( $self ) = @_;
-    sv_get_number_of_module_ctls( $self->slot, $self->num );
-}
-
-sub get_ctl_name {
-    my ( $self, $ctl ) = @_;
-    sv_get_module_ctl_name( $self->slot, $self->num, $ctl );
-}
-
-sub get_ctl_value {
-    my ( $self, $ctl, $scale ) = @_;
-    $scale //= $self->{ default_scale };
-    sv_get_module_ctl_value( $self->slot, $self->num, $ctl, $scale );
-}
-
-sub set_ctl_value {
-    my ( $self, $ctl, $val, $scale ) = @_;
-    $scale //= $self->{ default_scale };
-    sv_set_module_ctl_value( $self->slot, $self->num, $ctl, $scale );
-}
-
-sub get_ctl_min {
-    my ( $self, $ctl, $scale ) = @_;
-    $scale //= $self->{ default_scale };
-    sv_get_module_ctl_min( $self->slot, $self->num, $ctl, $scale );
-}
-
-sub get_ctl_max {
-    my ( $self, $ctl, $scale ) = @_;
-    $scale //= $self->{ default_scale };
-    sv_get_module_ctl_max( $self->slot, $self->num, $ctl, $scale );
-}
-
-sub get_ctl_offset {
-    my ( $self, $ctl ) = @_;
-    sv_get_module_ctl_offset( $self->slot, $self->num, $ctl );
-}
-
-sub get_ctl_type {
-    my ( $self, $ctl ) = @_;
-    sv_get_module_ctl_type( $self->slot, $self->num, $ctl );
-}
-
-sub get_ctl_group {
-    my ( $self, $ctl ) = @_;
-    sv_get_module_ctl_group( $self->slot, $self->num, $ctl );
-}
 
 for my $module_name ( keys %{ $module_data } ) {
     my $module = $module_data->{ $module_name };
@@ -321,6 +313,7 @@ for my $module_name ( keys %{ $module_data } ) {
 package Output {
     use base 'Audio::SunVox::FFI::Module';
     sub num { 0 }
+    sub add_to_slot {}
 }
 
 1;
