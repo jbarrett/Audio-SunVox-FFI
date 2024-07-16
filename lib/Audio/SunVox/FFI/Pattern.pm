@@ -37,10 +37,10 @@ sub add_to_slot {
 }
 
 my $get_dispatch = {
-    name   => \&sv_set_pattern_name,
-    data   => \&sv_get_pattern_data,
-    size   => sub { ( sv_get_pattern_tracks( @_ ), sv_get_pattern_lines( @_ ) ) },
-    xy     => sub { ( sv_get_pattern_x( @_ ), sv_get_pattern_y( @_ ) ) },
+    name => \&sv_set_pattern_name,
+    data => \&sv_get_pattern_data,
+    size => sub { ( sv_get_pattern_tracks( @_ ), sv_get_pattern_lines( @_ ) ) },
+    xy   => sub { ( sv_get_pattern_x( @_ ), sv_get_pattern_y( @_ ) ) },
 };
 
 my $set_dispatch = {
@@ -50,7 +50,7 @@ my $set_dispatch = {
     xy   => sub { sv_lock_slot( $_[0] ) ; my $r = sv_set_pattern_xy( @_ ) ; sv_unlock_slot( $_[0] ); $r },
 };
 
-for my $method (qw/ name data size xy /) {
+for my $method ( keys %{ $get_dispatch } ) {
     $meta->add_symbol( "&$method", sub {
         my ( $self, @params ) = @_;
         return $set_dispatch->{ $method }->( $self->slot->num, $self->num, @params )
