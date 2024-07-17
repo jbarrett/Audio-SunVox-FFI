@@ -49,6 +49,7 @@ use base qw/ Exporter /;
 
 use FFI::Platypus 2.00;
 use FFI::Platypus::Memory qw/ malloc free /;
+use FFI::Platypus::Buffer qw/ scalar_to_buffer /;
 use FFI::CheckLib 0.25 qw/ find_lib_or_die /;
 use Carp qw/ croak carp /;
 
@@ -299,17 +300,20 @@ sub _get_time_map {
     @map;
 }
 
+sub _module_curve_write {
+    my ( $sub, $slot, $module, $curve, $data, $len) = @_;
+    $len = @{ $data };
+    my $buf = pack "f$len", @{ $data };
+    my ( $pointer, $size ) = scalar_to_buffer $buf;
+    $sub->( $slot, $module, $curve, $pointer, $len, 1 );
+}
+
 sub _module_curve {
     my ( $sub, $slot, $module, $curve, $data, $len) = @_;
-    my @curve_data = ref $data ? @{ $data } : ();
-    my $write = @curve_data ? 1 : 0;
-    $len = @curve_data if @curve_data;
-    my $buf = $write
-        ? pack "f$len", @curve_data
-        : malloc $len * 4;
-    my $vals = $sub->( $slot, $module, $curve, $buf, $len, $write );
-    return $vals if $write;
-    my @curve = $ffi->cast( 'opaque' => "float[$vals]", $buf );
+    return _module_curve_write( @_ ) if $data;
+    my $buf = malloc $len * 4;
+    $sub->( $slot, $module, $curve, $buf, $len, 0 );
+    my @curve = $ffi->cast( 'opaque' => "float[$len]", $buf );
     free $buf;
     @curve;
 }
