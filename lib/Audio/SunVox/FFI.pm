@@ -163,7 +163,7 @@ BEGIN {
         sv_get_song_tpl                 => [ [qw/ int /]                                    => 'int' ],
         sv_get_song_length_frames       => [ [qw/ int /]                                    => 'uint32' ],
         sv_get_song_length_lines        => [ [qw/ int /]                                    => 'uint32' ],
-        sv_get_time_map                 => [ [qw/ int int uint32 int /]                     => 'int' ],
+        sv_get_time_map                 => [ [qw/ int int uint32* int /]                    => 'int',    \&_get_time_map ],
         sv_new_module                   => [ [qw/ int string string int int int /]          => 'int' ],
         sv_remove_module                => [ [qw/ int int /]                                => 'int' ],
         sv_connect_module               => [ [qw/ int int int /]                            => 'int' ],
@@ -190,7 +190,7 @@ BEGIN {
         sv_set_module_finetune          => [ [qw/ int int int /]                            => 'int' ],
         sv_set_module_relnote           => [ [qw/ int int int /]                            => 'int' ],
         sv_get_module_scope2            => [ [qw/ int int int sint16* uint32 /]             => 'uint32', \&_get_module_scope ],
-        sv_module_curve                 => [ [qw/ int int int float* int int/]              => 'int' ],
+        sv_module_curve                 => [ [qw/ int int int float* int int/]              => 'int',    \&_module_curve ],
         sv_get_number_of_module_ctls    => [ [qw/ int int /]                                => 'int' ],
         sv_get_module_ctl_name          => [ [qw/ int int int /]                            => 'string' ],
         sv_get_module_ctl_value         => [ [qw/ int int int int /]                        => 'int' ],
@@ -284,9 +284,34 @@ sub _get_module_scope {
     my $buf = malloc $samples * 2;
     my @scope;
     $samples = $sub->( $slot, $module, $channel, $buf, $samples );
-    @scope = $ffi->cast( 'opaque' => "sint16[$samples]", $buf ) if $samples;
+    @scope = $ffi->cast( 'opaque' => "sint16[$samples]", $buf ) if $samples > 0;
     free $buf;
     @scope;
+}
+
+sub _get_time_map {
+    my ( $sub, $slot, $start_line, $len, $flags ) = @_;
+    my $buf = malloc $len * 4;
+    my @map;
+    $sub->( $slot, $start_line, $len, $buf, $flags );
+    @map = $ffi->cast( 'opaque' => "uint32[$len]", $buf );
+    free $buf;
+    @map;
+}
+
+sub _module_curve {
+    my ( $sub, $slot, $module, $curve, $data, $len) = @_;
+    my @curve_data = ref $data ? @{ $data } : ();
+    my $write = @curve_data ? 1 : 0;
+    $len = @curve_data if @curve_data;
+    my $buf = $write
+        ? pack "f$len", @curve_data
+        : malloc $len * 4;
+    my $vals = $sub->( $slot, $module, $curve, $buf, $len, $write );
+    return $vals if $write;
+    my @curve = $ffi->cast( 'opaque' => "float[$vals]", $buf );
+    free $buf;
+    @curve;
 }
 
 # Ensure the data is created before a user sv_init() call

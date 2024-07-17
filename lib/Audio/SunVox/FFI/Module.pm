@@ -255,7 +255,19 @@ sub scope {
     sv_get_module_scope2( $self->slot->num, $self->num, $channel, $samples );
 }
 
-sub curve { ... }
+# Curve -> length
+my $curve_map = {
+    MultiSynth => [ 128, 257, 128 ], # note/velocity, velocity/velocity, note/pitch
+    WaveShaper => [ 256 ],           # waveshaper curve
+    MultiCtl   => [ 257 ],           # multictl curve
+    Generator  => [ 32 ]             # drawn waveform
+};
+
+sub curve {
+    my ( $self, $curve_num, $data, $length ) = @_;
+    $length //= $curve_map->{ ref $self }->[ $curve_num ];
+    sv_module_curve( $self->slot->num, $self->num, $curve_num, $data, $length );
+}
 
 for my $module_name ( keys %{ $module_data } ) {
     my $module = $module_data->{ $module_name };

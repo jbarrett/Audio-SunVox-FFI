@@ -241,14 +241,14 @@ sub get_length_lines {
 }
 
 # TODO: Looks like it needs a wrapper
-sub get_time_map { ... }
+sub time_map { ... }
 
-sub set_event_t {
+sub event_t {
     my ( $self, $set, $t ) = @_;
     sv_set_event_t( $self->num, $set, $t )
 }
 
-sub get_module_type {
+sub module_type {
     my ( $self, $module ) = @_;
     my $num = ref $module
         ? $module->num
