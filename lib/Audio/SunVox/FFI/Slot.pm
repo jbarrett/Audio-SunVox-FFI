@@ -58,7 +58,8 @@ sub _init {
     push @config, "buffer=$_buffer" if $_buffer;
 
     $_flags |= SV_INIT_FLAG_NO_DEBUG_OUTPUT if $params{ quiet } || $quiet;
-    my $init = sv_init( join( '|', @config ), $_samplerate, $_channels, $_flags ) if ! $Audio::SunVox::FFI::initialised;
+    my $init = 0;
+    $init = sv_init( join( '|', @config ), $_samplerate, $_channels, $_flags ) if ! $Audio::SunVox::FFI::initialised;
     croak "Error initialising : $init" if $init < 0;
 }
 
