@@ -104,7 +104,7 @@ sub ctl_value {
     $module->ctl_value_scaled( 1, 2 );
     $module->ctl_value_scaled( 1, 0x7F, 2 );
 
-Uses passed scale
+Uses passed scale.
 
 =cut
 

@@ -55,7 +55,9 @@ use Carp qw/ croak carp /;
 
 our $VERSION = '0.00';
 
-our $lofi = 0;
+our $initialised = 0;
+our $lofi = 0; # TODO
+
 my $ffi;
 my $constants;
 my $binds;
@@ -129,8 +131,8 @@ BEGIN {
     };
 
     $binds = {
-        sv_init                         => [ [qw/ string int int uint32 /]                  => 'int' ],
-        sv_deinit                       => [ [qw/ void /]                                   => 'int' ],
+        sv_init                         => [ [qw/ string int int uint32 /]                  => 'int',    \&_init ],
+        sv_deinit                       => [ [qw/ void /]                                   => 'int',    \&_deinit ],
         sv_get_sample_rate              => [ [qw/ void /]                                   => 'int' ],
         sv_update_input                 => [ [qw/ void /]                                   => 'int' ],
         sv_audio_callback               => [ [qw/ opaque int int uint32 /]                  => 'int' ],
@@ -316,6 +318,20 @@ sub _module_curve {
     my @curve = $ffi->cast( 'opaque' => "float[$len]", $buf );
     free $buf;
     @curve;
+}
+
+sub _init {
+    if ( $initialised ) {
+        carp "Engine already initialised!";
+        return -1;
+    }
+    my $sub = shift;
+    $initialised = 1 if $sub->( @_ ) >= 0;
+}
+
+sub _deinit {
+    my $sub = shift;
+    $initialised = 0 if $sub->( @_ ) >= 0;
 }
 
 # Ensure the data is created before a user sv_init() call

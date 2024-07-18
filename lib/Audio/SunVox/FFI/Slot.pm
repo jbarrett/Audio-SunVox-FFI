@@ -15,7 +15,6 @@ use Audio::SunVox::FFI::ModuleData;
 my $slot = -1;
 my $first;
 my $last;
-my $initialised = 0;
 
 our $audiodriver;
 our $audiodevice;
@@ -43,11 +42,8 @@ sub DESTROY {
     # TODO: save .sunvox file here
 }
 
-sub new {
-    my ( $class, %params ) = @_;
-
-    $slot++;
-    croak "No more slots available" if $slot > 15;
+sub _init {
+    my ( %params ) = @_;
 
     my $_audiodriver = $params{ audiodriver } // $audiodriver;
     my $_audiodevice = $params{ audiodevice } // $audiodevice;
@@ -62,13 +58,20 @@ sub new {
     push @config, "buffer=$_buffer" if $_buffer;
 
     $_flags |= SV_INIT_FLAG_NO_DEBUG_OUTPUT if $params{ quiet } || $quiet;
-
-    my $init = sv_init( join( '|', @config ), $_samplerate, $_channels, $_flags ) if ! $initialised;
+    my $init = sv_init( join( '|', @config ), $_samplerate, $_channels, $_flags ) if ! $Audio::SunVox::FFI::initialised;
     croak "Error initialising : $init" if $init < 0;
-    $initialised = 1;
+}
 
-    sv_open_slot( $slot );
+sub new {
+    my ( $class, %params ) = @_;
+
+    $slot++;
+    croak "No more slots available" if $slot > 15;
+
+    _init( %params );
+
     $params{ num } = $slot;
+    sv_open_slot( $slot );
 
     my $self = bless \%params, $class;
     $first //= $self;
