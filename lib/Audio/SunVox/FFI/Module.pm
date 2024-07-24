@@ -269,6 +269,68 @@ sub curve {
     sv_module_curve( $self->slot->num, $self->num, $curve_num, $data, $length );
 }
 
+sub clone {
+    my ( $self, $target ) = @_;
+    my $class = ref $self;
+    $target //= $class->new;
+    croak "Target class '" . ref $target . "' is not a '" . $class . "'"
+        unless ref $target eq $class;
+
+    # copy controls
+    my $ctls = $target->number_of_ctls;
+    for my $ctl ( 0..$ctls-1 ) {
+        $target->ctl_value( $self->ctl_value );
+    }
+
+    # copy curves
+    my @curves = @{ $curve_map->{ $class } };
+    if ( @curves ) {
+        for my $curve ( 0..$#curves ) {
+            $target->curve( $curve, [ $self->curve( $curve ) ] );
+        }
+    }
+
+    # copy name
+    $target->name( $self->name );
+
+    # copy xyz
+    $target->xy( $self->xy );
+
+    # copy color
+    $target->color( $self->color );
+
+    # copy finetune
+    $target->finetune( $self->finetune );
+
+    # copy relnote
+    $target->relnote( $self->relnote );
+
+    # copy color
+    $target->color( $self->color );
+
+    $target;
+}
+
+sub clone_to_slot {
+    my ( $self, $slot ) = @_;
+    croak "Missing required paramater: slot" unless $slot;
+    my $class = ref $self;
+
+    my $target = $slot->add_module( $class );
+
+    $self->clone( $target );
+}
+
+sub move_to_slot {
+    my ( $self, $slot ) = @_;
+
+    my $target = $self->clone_to_slot( $slot );
+
+    $self->remove;
+
+    $target;
+}
+
 for my $module_name ( keys %{ $module_data } ) {
     my $module = $module_data->{ $module_name };
     my $meta = meta::package->get( $module->{ class_name } );
