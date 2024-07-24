@@ -122,7 +122,7 @@ sub add_pattern {
     $pattern;
 }
 
-sub get_number_of_patterns {
+sub number_of_patterns {
     my ( $self ) = @_;
     sv_get_number_of_patterns( $self->num );
 }
@@ -177,13 +177,14 @@ sub sync_resume {
     sv_sync_resume( $self->num );
 }
 
-sub set_autostop {
+sub autostop {
     my ( $self, $autostop ) = @_;
+    return sv_get_autostop( $self->num ) unless defined $autostop;
     $autostop = $autostop ? 1 : 0;
     sv_set_autostop( $self->num, $autostop );
 }
 
-sub get_autostop {
+sub end_of_song {
     my ( $self ) = @_;
     sv_end_of_song( $self->num );
 }
@@ -201,51 +202,59 @@ sub volume {
 
 sub mute { shift->volume( 0 ); }
 
-sub get_current_line {
+sub current_line {
     my ( $self ) = @_;
     sv_get_current_line( $self->num );
 }
 
 # TODO: Add fixed point wrapper to FFI lib
-sub get_current_line2 { ... }
+sub current_line2 { ... }
 
-sub get_current_signal_level {
+sub current_signal_level {
     my ( $self, $channel ) = @_;
     sv_get_current_signal_level( $self->num, $channel );
 }
 
-sub get_name {
-    my ( $self ) = @_;
+sub name {
+    my ( $self, $name ) = @_;
+    return sv_set_song_name( $self->num, $name ) if defined $name;
     sv_get_song_name( $self->num );
 }
 
-sub set_name {
-    my ( $self, $name ) = @_;
-    sv_set_song_name( $self->num, $name );
-}
-
-sub get_bpm {
+sub bpm {
     my ( $self ) = @_;
     sv_get_song_bpm( $self->num );
 }
 
-sub get_tpl {
+sub tpl {
     my ( $self ) = @_;
     sv_get_song_tpl( $self->num );
 }
 
-sub get_length_frames {
+sub length_frames {
     my ( $self ) = @_;
     sv_get_song_length_frames( $self->num );
 }
 
-sub get_length_lines {
+sub length_lines {
     my ( $self ) = @_;
     sv_get_song_length_lines( $self->num );
 }
 
-# TODO: Looks like it needs a wrapper
-sub time_map { ... }
+sub time_map {
+    my ( $self, $start_line, $len, $flags ) = @_;
+    sv_get_time_map( $self->num, $start_line, $len, $flags );
+}
+
+sub time_map_speed {
+    my ( $self, $start_line, $len ) = @_;
+    map { ( $_ & 0xFFFF, $_ >> 16 & 0xFFFF ) } ( sv_get_time_map( $self->num, $start_line, $len, SV_TIME_MAP_SPEED ) );
+}
+
+sub time_map_framecnt {
+    my ( $self, $start_line, $len ) = @_;
+    sv_get_time_map( $self->num, $start_line, $len, SV_TIME_MAP_FRAMECNT );
+}
 
 sub event_t {
     my ( $self, $set, $t ) = @_;
@@ -263,13 +272,13 @@ sub module_type {
 sub load_module {
     my ( $self, $filename ) = @_;
     my $module = sv_load_module( $self->num, $filename, int rand( 1024 ), int rand( 1024 ) );
-    my $type = $self->get_module_type( $module );
+    my $type = $self->module_type( $module );
     return $module > 0 # NO
         ? Audio::SunVox::FFI::ModuleData::_class_name( $type )->new( in_slot => 1, slot => $self, num => $module )
         : undef;
 }
 
-sub get_number_of_modules {
+sub number_of_modules {
     my ( $self ) = @_;
     sv_get_number_of_modules( $self->num );
 }
@@ -277,7 +286,7 @@ sub get_number_of_modules {
 sub find_module {
     my ( $self, $name ) = @_;
     my $module = sv_find_module( $self->num, $name );
-    my $type = $self->get_module_type( $module );
+    my $type = $self->module_type( $module );
     return $module > 0
         ? Audio::SunVox::FFI::ModuleData::_class_name( $type )->new( in_slot => 1, slot => $self, num => $module )
         : undef;
@@ -289,11 +298,16 @@ sub find_pattern {
     Audio::SunVox::FFI::Pattern->new( in_slot => 1, slot => $self, num => $pattern );
 }
 
-sub get_ticks {
+sub asap {
+    my ( $self ) = @_;
+    sv_set_event_t( $self->num, 1, 0 );
+}
+
+sub ticks {
     sv_get_ticks();
 }
 
-sub get_log {
+sub log {
     my ( $self, $bytes ) = @_;
     sv_get_log( $bytes );
 }
