@@ -185,6 +185,8 @@ BEGIN {
         sv_get_module_inputs            => [ [qw/ int int /]                                => 'int*',   \&_get_module_inputs ],
         sv_get_module_outputs           => [ [qw/ int int /]                                => 'int*',   \&_get_module_outputs ],
         sv_get_module_type              => [ [qw/ int int /]                                => 'string' ],
+        sv_get_module_name              => [ [qw/ int int /]                                => 'string' ],
+        sv_set_module_name              => [ [qw/ int int string /]                         => 'int' ],
         sv_get_module_xy                => [ [qw/ int int /]                                => 'uint32', \&_get_module_xy ],
         sv_set_module_xy                => [ [qw/ int int int int /]                        => 'uint32', ],
         sv_get_module_color             => [ [qw/ int int /]                                => 'int',    \&_get_module_color ],
