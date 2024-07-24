@@ -244,7 +244,9 @@ sub _get_module_xy {
     $x -= 0x10000 if $x & 0x8000;
     my $y = $xy >> 16;
     $y -= 0x10000 if $y & 0x8000;
-    ( $x, $y );
+    wantarray
+        ? ( $x, $y )
+        : [ $x, $y ]
 }
 
 sub _get_module_color {
@@ -253,7 +255,9 @@ sub _get_module_color {
     my $red   = $rgb & 0xFF;
     my $green = $rgb >> 8 & 0xFF;
     my $blue  = $rgb >> 16 & 0xFF;
-    ( $red, $green, $blue );
+    wantarray
+        ? ( $red, $green, $blue )
+        : [ $red, $green, $blue ]
 }
 
 sub _set_module_color {
@@ -267,41 +271,51 @@ sub _get_module_finetune {
     my $finetune = $sub->( @_ );
     my $relnote = $finetune >> 16 & 0xFFFF;
     $finetune = $finetune & 0xFFFF;
-    ( $finetune, $relnote );
+    wantarray
+        ? ( $finetune, $relnote )
+        : [ $finetune, $relnote ]
 }
 
 sub _get_module_outputs {
     my ( $sub, $slot, $module ) = @_;
     my $flags = sv_get_module_flags( $slot, $module );
     my $size = ( $flags & SV_MODULE_OUTPUTS_MASK ) >> SV_MODULE_OUTPUTS_OFF;
-    $ffi->cast( 'int*' => "int[$size]", $sub->( $slot, $module ) );
+    my $outs = $ffi->cast( 'int*' => "int[$size]", $sub->( $slot, $module ) );
+    wantarray
+        ? @{ $outs }
+        : $outs
 }
 
 sub _get_module_inputs {
     my ( $sub, $slot, $module ) = @_;
     my $flags = sv_get_module_flags( $slot, $module );
     my $size = ( $flags & SV_MODULE_INPUTS_MASK ) >> SV_MODULE_INPUTS_OFF;
-    $ffi->cast( 'int*' => "int[$size]", $sub->( $slot, $module ) );
+    my $ins = $ffi->cast( 'int*' => "int[$size]", $sub->( $slot, $module ) );
+    wantarray
+        ? @{ $ins }
+        : $ins
 }
 
 sub _get_module_scope {
     my ( $sub, $slot, $module, $channel, $samples ) = @_;
     my $buf = malloc $samples * 2;
-    my @scope;
     $samples = $sub->( $slot, $module, $channel, $buf, $samples );
-    @scope = $ffi->cast( 'opaque' => "sint16[$samples]", $buf ) if $samples > 0;
+    my $scope = $ffi->cast( 'opaque' => "sint16[$samples]", $buf ) if $samples > 0;
     free $buf;
-    @scope;
+    wantarray
+        ? @{ $scope }
+        : $scope
 }
 
 sub _get_time_map {
     my ( $sub, $slot, $start_line, $len, $flags ) = @_;
     my $buf = malloc $len * 4;
-    my @map;
     $sub->( $slot, $start_line, $len, $buf, $flags );
-    @map = $ffi->cast( 'opaque' => "uint32[$len]", $buf );
+    my $map = $ffi->cast( 'opaque' => "uint32[$len]", $buf );
     free $buf;
-    @map;
+    wantarray
+        ? @{ $map }
+        : $map
 }
 
 sub _module_curve_write {
@@ -317,9 +331,11 @@ sub _module_curve {
     return _module_curve_write( @_ ) if $data;
     my $buf = malloc $len * 4;
     $sub->( $slot, $module, $curve, $buf, $len, 0 );
-    my @curve = $ffi->cast( 'opaque' => "float[$len]", $buf );
+    $curve = $ffi->cast( 'opaque' => "float[$len]", $buf );
     free $buf;
-    @curve;
+    wantarray
+        ? @{ $curve }
+        : $curve;
 }
 
 sub _init {
