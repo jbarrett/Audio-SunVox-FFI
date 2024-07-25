@@ -11,6 +11,7 @@ use Carp qw/ carp croak /;
 use Audio::SunVox::FFI ':all';
 use Audio::SunVox::FFI::Module;
 use Audio::SunVox::FFI::ModuleData;
+use Audio::SunVox::FFI::TrackPool;
 
 my $slot = -1;
 my $first;
@@ -74,6 +75,8 @@ sub new {
     $params{ num } = $slot;
     sv_open_slot( $slot );
 
+    $params{ trackpool } = Audio::SunVox::FFI::TrackPool->new;
+
     my $self = bless \%params, $class;
     $first //= $self;
     $last = $self;
@@ -81,6 +84,8 @@ sub new {
 
 sub lock   { sv_lock_slot( shift->num ) }
 sub unlock { sv_unlock_slot( shift->num ) }
+
+sub trackpool { shift->{ trackpool } }
 
 sub add_module {
     my ( $self, $type, $name ) = @_;
@@ -97,6 +102,8 @@ sub remove_module {
     my ( $self, $module ) = @_;
     $self->lock;
     sv_remove_module( $self->num, $module->num );
+    $self->tracks->release( $module->tracks );
+    undef $module->{ slot };
     $self->unlock;
 }
 

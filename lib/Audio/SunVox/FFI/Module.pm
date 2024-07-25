@@ -135,22 +135,40 @@ for my $scale ( qw/ real hex disp /) {
     } );
 }
 
+my $ctl_hooks = {
+    polyphony => sub {
+        my ( $self, $count ) = @_;
+        if ( $count > @{ $self->tracks } ) {
+            push @{ $self->tracks }, $self->slot->trackpool->hold( $count - @{ $self->tracks } );
+        }
+        elsif ( $count < @{ $self->tracks } ) {
+            my @release = splice @{ $self->tracks },
+            $self->slot->trackpool->release(
+                splice @{ $self->tracks }, $count
+            )
+        }
+    }
+};
+
 sub _ctl {
     my ( $ctl, $scale ) = @_;
     my ( $min, $max, $method_name ) = @{ $ctl }{ "min_$scale", "max_$scale", 'method_name' };
     sub {
         my ( $self, $value ) = @_;
 
+        my $hook = $ctl_hooks->{ $method_name };
+        $self->$hook( $value ) if $hook;
+
         return sv_get_module_ctl_value( $self->slot->num, $self->num, $ctl->{ ctl_num }, $self->scale( $scale ) )
             unless defined $value;
 
         goto nobounds if $self->skip_bounds_checking;
         if ( $value < $min ) {
-            carp "Value $value below minimum of $min for $ctl->{ method_name } - setting to $min";
+            carp "Value $value below minimum of $min for $method_name - setting to $min";
             $value = $min;
         }
         elsif ( $value > $max ) {
-            carp "Value $value below maximum of $max for $ctl->{ method_name } - setting to $max";
+            carp "Value $value below maximum of $max for $method_name - setting to $max";
             $value = $max;
         }
 nobounds:
@@ -189,8 +207,12 @@ sub new {
         return -1;
     }
     $params{ slot } //= Audio::SunVox::FFI::Slot->get_last;
+    $params{ tracks } = ( $params{ polyphony } && $class->can('polyphony') )
+        ? $params{ slot }->trackpool->hold( $params{ polyphony } )
+        : $params{ slot }->trackpool->hold( 1 );
     my $self = bless \%params, $class;
     $self->add_to_slot( $params{ name } ) unless $self->{ in_slot };
+    $self->polyphony( $params{ polyphony } ) if $params{ polyphony } && $self->can('polyphony');
     $self;
 }
 
@@ -205,6 +227,8 @@ sub scale { $scales->{ $_[1] } }
 sub num { shift->{ num } }
 
 sub slot { shift->{ slot } }
+
+sub tracks { shift->{ tracks } }
 
 sub default_scale { shift->scale( $default_scale ) }
 
@@ -290,22 +314,12 @@ sub clone {
         }
     }
 
-    # copy name
+    # copy other attributes
     $target->name( $self->name );
-
-    # copy xyz
     $target->xy( $self->xy );
-
-    # copy color
     $target->color( $self->color );
-
-    # copy finetune
     $target->finetune( $self->finetune );
-
-    # copy relnote
     $target->relnote( $self->relnote );
-
-    # copy color
     $target->color( $self->color );
 
     $target;
