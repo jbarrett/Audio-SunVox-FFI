@@ -281,10 +281,11 @@ sub scope {
 
 # Curve -> length
 my $curve_map = {
-    MultiSynth => [ 128, 257, 128 ], # note/velocity, velocity/velocity, note/pitch
-    WaveShaper => [ 256 ],           # waveshaper curve
-    MultiCtl   => [ 257 ],           # multictl curve
-    Generator  => [ 32 ]             # drawn waveform
+    MultiSynth       => [ 128, 257, 128 ], # note/velocity, velocity/velocity, note/pitch
+    WaveShaper       => [ 256 ],           # waveshaper curve
+    MultiCtl         => [ 257 ],           # multictl curve
+    Generator        => [ 32 ]             # drawn waveform
+    AnalogGenerator  => [ 32 ]             # drawn waveform
 };
 
 sub curve {
