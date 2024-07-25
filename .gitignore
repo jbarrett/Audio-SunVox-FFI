@@ -36,5 +36,5 @@ inc/
 
 # This
 sunvox_lib/
-[ABCDEFGHIJKLMNOPQRSTUVWXYZ]*/
+/[ABCDEFGHIJKLMNOPQRSTUVWXYZ]*/
 *.sunvox
