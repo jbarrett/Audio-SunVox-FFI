@@ -12,6 +12,9 @@ no warnings 'meta::experimental';
 my $meta = meta::get_this_package;
 
 use Carp qw/ carp croak /;
+use Time::HiRes qw/ time /;
+use List::Util qw/ shuffle /;
+
 use Audio::SunVox::FFI ':all';
 use Audio::SunVox::FFI::ModuleData;
 use Audio::SunVox::FFI::Slot;
@@ -142,10 +145,9 @@ my $ctl_hooks = {
             push @{ $self->tracks }, $self->slot->trackpool->hold( $count - @{ $self->tracks } );
         }
         elsif ( $count < @{ $self->tracks } ) {
-            my @release = splice @{ $self->tracks },
-            $self->slot->trackpool->release(
-                splice @{ $self->tracks }, $count
-            )
+            my @release = splice @{ $self->tracks }, $count;
+            $self->track_off( $_ ) for @release;
+            $self->slot->trackpool->release( @release );
         }
     }
 };
@@ -210,6 +212,7 @@ sub new {
     $params{ tracks } = ( $params{ polyphony } && $class->can('polyphony') )
         ? $params{ slot }->trackpool->hold( $params{ polyphony } )
         : $params{ slot }->trackpool->hold( 1 );
+    $params{ track_activity } = {};
     my $self = bless \%params, $class;
     $self->add_to_slot( $params{ name } ) unless $self->{ in_slot };
     $self->polyphony( $params{ polyphony } ) if $params{ polyphony } && $self->can('polyphony');
@@ -229,6 +232,8 @@ sub num { shift->{ num } }
 sub slot { shift->{ slot } }
 
 sub tracks { shift->{ tracks } }
+
+sub track_activity { shift->{ track_activity } }
 
 sub default_scale { shift->scale( $default_scale ) }
 
@@ -251,15 +256,67 @@ sub send_event {
     $ctl //= 0;
     sv_send_event( $self->slot->num, $track, $note, $vel, $self->num + 1, $ctl << 8, $val );
 }
+*event = \&send_event;
+
+sub _sort_tracks_by_time {
+    my $self = shift;
+    my @tracks = @_ || @{ $self->tracks };
+    sort {
+        $self->track_activity->{ $a }->{ time }
+        <=>
+        $self->track_activity->{ $b }->{ time }
+    } @tracks;
+}
+
+my $polyphony_dispatch;
+$polyphony_dispatch = {
+    round_robin => sub {
+        my $self = shift;
+        push @{ $self->tracks }, shift @{ $self->tracks };
+        $self->tracks->[0];
+    },
+    reuse => sub {
+        my ( $self, $note ) = @_;
+        my ( $track ) = grep { $self->track_activity->{ $_ }->{ note } == $note } @{ $self->tracks };
+        defined $track
+            ? $track
+            : $polyphony_dispatch->{ last }->( $note );
+    },
+    last => sub {
+        ( shift->_sort_tracks_by_time )[0];
+    },
+    first => sub {
+        ( shift->_sort_tracks_by_time )[-1];
+    },
+    rand => sub {
+        ( shuffle @{ shift->tracks } )[0];
+    }
+};
+
+sub get_track_for_note {
+    my ( $self, $note ) = @_;
+    my ( $track ) = grep { $self->track_ectivity->{ $_ }->{ note } eq $note }
+        @{ $self->tracks };
+    $track;
+}
 
 sub note_on {
-    my ( $self, $track, $note, $vel ) = @_;
+    my ( $self, $note, $vel ) = @_;
+    my $track = $self->$polyphony_dispatch->{ $self->{ polyphony_strategy } }->( $note );
+    @{ $self->track_activity }{ qw/ note time / } = ( $note, time );
     sv_send_event( $self->slot->num, $track, $note, $vel, $self->num + 1 );
 }
 
 sub note_off {
-    my ( $self, $track, $note ) = @_;
-    sv_send_event( $self->slot->num, $track, NOTECMD_NOTE_OFF, $note, $self->num + 1 );
+    my ( $self, $note ) = @_;
+    my $track = $self->get_track_for_note( $note );
+    return unless defined $track;
+    $self->track_off( $track );
+}
+
+sub track_off {
+    my ( $self, $track ) = @_;
+    sv_send_event( $self->slot->num, $track, NOTECMD_NOTE_OFF );
 }
 
 sub pitch {
