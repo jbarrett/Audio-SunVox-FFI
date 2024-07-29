@@ -457,7 +457,7 @@ for my $module_name ( keys %{ $module_data } ) {
 }
 
 package Output {
-    use base 'Audio::SunVox::FFI::Module';
+    our @ISA = 'Audio::SunVox::FFI::Module';
     sub num { 0 }
     sub add_to_slot {}
 }
