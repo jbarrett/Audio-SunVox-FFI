@@ -33,7 +33,7 @@ package Audio::SunVox::FFI;
     sv_set_module_ctl_value( $slot, $generator, 7, 0, 2 ); # Disable sustain
     sv_set_module_ctl_value( $slot, $generator, 4, 200, 2 ); # Set release value
     sv_send_event( $slot, 0, 50, 127, $generator + 1 ); # Send a note on event
-    # ^ Why $generator + 1? Dunno yet...
+    # ^ Why $generator + 1? Because the manual says so ...
     sleep(1);
     
     # Save the patch
@@ -392,6 +392,20 @@ rather than the sequencer - learning to use a tracker is left to the reader as a
 
 A slot is an independent instance of the SunVox engine, with its own set
 of sequences and modules. You may create up to 16 of these, numbered from zero to fifteen.
+
+=head2 Patterns and Tracks
+
+A pattern contains a sequence of music events - played notes, modulation, and so on. Patterns
+are made up of one or more tracks, which are processed in parallel. You might want a track
+for each drum in a drum part, or for each note in a polyphonic sequence.
+
+A notable difference between SunVox patterns and a MIDI sequence is that "note off" messages
+apply to the last played module on a track, rather than stopping a given note. New "note on"
+messages have the same effect - the previously played note/module on the track is stopped.
+
+When sending real-time events in "as quickly as possible" mode, you may think of them as
+existing in a floating pattern of 32 tracks - track allocation should be considered if
+polyphony is desired.
 
 =head2 Module
 
