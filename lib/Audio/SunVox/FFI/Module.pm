@@ -212,6 +212,7 @@ sub new {
     $params{ tracks } = ( $params{ polyphony } && $class->can('polyphony') )
         ? $params{ slot }->trackpool->hold( $params{ polyphony } )
         : $params{ slot }->trackpool->hold( 1 );
+    $params{ polyphony_strategy } //= $params{ poly_mode } // 'last';
     $params{ track_activity } = {};
     my $self = bless \%params, $class;
     $self->add_to_slot( $params{ name } ) unless $self->{ in_slot };
