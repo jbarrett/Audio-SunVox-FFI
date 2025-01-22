@@ -61,8 +61,8 @@ for my $method ( keys %{ $get_dispatch } ) {
     $meta->add_symbol( "&$method", sub {
         my ( $self, @params ) = @_;
         return $get_dispatch->{ $method }->( $self->slot->num, $self->num ) unless @params;
-        if ( ! ( my $prop = $set_dispatch->{ $method } ) ) {
-            carp "Read-only property: $prop";
+        if ( ! $set_dispatch->{ $method } ) {
+            carp "Read-only property: $method";
             return -1;
         }
         $set_dispatch->{ $method }->( $self->slot->num, $self->num, @params );
