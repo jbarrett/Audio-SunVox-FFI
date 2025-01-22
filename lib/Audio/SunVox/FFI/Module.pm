@@ -67,8 +67,6 @@ for the instance.
 
 Returns the list of module numbers for modules connected to from this module.
 
-=cut
-
 =head2 inputs
 
     my $inputs = $module->outputs;
@@ -77,7 +75,9 @@ Returns the list of module numbers for modules connected to this module.
 
 =cut
 
-my $get_dispatch = {
+
+
+my $dispatch = {
     flags      => \&sv_get_module_flags,
     outputs    => \&sv_get_module_outputs,
     inputs     => \&sv_get_module_inputs,
@@ -94,23 +94,10 @@ my $get_dispatch = {
     number_of_ctls => \&sv_get_number_of_module_ctls,
 };
 
-my $set_dispatch = {
-    name     => \&sv_set_module_name,
-    xy       => \&sv_set_module_xy,
-    color    => \&sv_set_module_color,
-    finetune => \&sv_set_module_finetune,
-    relnote  => \&sv_set_module_relnote,
-};
-
 for my $method ( keys %{ $get_dispatch } ) {
     $meta->add_symbol( "&$method", sub {
         my ( $self, @params ) = @_;
-        return $get_dispatch->{ $method }->( $self->slot->num, $self->num ) unless @params;
-        if ( ! $set_dispatch->{ $method } ) {
-            carp "Read-only property: $method";
-            return -1;
-        }
-        $set_dispatch->{ $method }->( $self->slot->num, $self->num, @params );
+        $dispatch->{ $method }->( $self->slot->num, $self->num, @params );
     } );
 }
 
