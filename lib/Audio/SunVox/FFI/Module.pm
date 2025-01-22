@@ -73,9 +73,70 @@ Returns the list of module numbers for modules connected to from this module.
 
 Returns the list of module numbers for modules connected to this module.
 
+=head2 type
+
+    my $name = $module->type;
+
+Returns the module type, e.g. "Generator".
+
+=head2 name
+
+    my $name = $module->name;
+    $module->name( "New name" );
+
+Returns or sets the module's name.
+
+=head2 xy
+
+    my @xy = $module->xy;
+    $module->xy( 666, 1337 );
+
+Returns or sets the x and y position of the module in the patch bay.
+
+=head2 color
+
+    my @rgb = $module->color;
+    $module->color( 101, 28, 50 );
+
+Returns or sets the colour of the module in the patch bay, as RGB values.
+
+=head2 finetune
+
+    my $fine = $module->finetune;
+    $module->finetune( 50 );
+
+Returns or sets the fine tune amount. This is usually a range within: 0x00 for no effect, 0x01 for a semitone lower, 0x80 for no change, 0xFF for a semitone higher.
+
+=head2 relnote
+
+    my $relnote = $module->relnote;
+    $module->relnote( -3 );
+
+Set the relative note of the module in semitones. Along with finetune, this is useful for tuning sampler modules.
+
+=head2 ctl_name
+
+    my $ctl_name = $module->ctl_name( 1 );
+
+Return the name of the control corresponding to its order in the SunVox interface,
+e.g. for a Generator ctl 0 is "Volume", ctl 1 is "Waveform".
+
+=head2 ctl_offset
+
+    my $ctl_name = $module->ctl_offset( 2 );
+
+Returns the "real" vs "displayed" offset for a given control, e.g. a Generator's
+control 2 is "Panning" - a left-right balance control. Internally, this is a value
+from 0 to 256. This is displayed as -128 to 128, so the offset value is -128.
+
+=head2 ctl_group
+
+    my $ctl_group = $module->ctl_group( 0x0C );
+
+Return the group for the given control. This is mostly useful when creating
+metamodules and configuring interface colours within SunVox.
+
 =cut
-
-
 
 my $dispatch = {
     flags      => \&sv_get_module_flags,
@@ -94,18 +155,36 @@ my $dispatch = {
     number_of_ctls => \&sv_get_number_of_module_ctls,
 };
 
-for my $method ( keys %{ $get_dispatch } ) {
+for my $method ( keys %{ $dispatch } ) {
     $meta->add_symbol( "&$method", sub {
         my ( $self, @params ) = @_;
         $dispatch->{ $method }->( $self->slot->num, $self->num, @params );
     } );
 }
 
+=head2 ctl_min
+
+    my $min = $module->ctl_min( 3 );
+    my $min_hex = $module->ctl_min( 3, 1 );
+
+Return the minimum value for the specified control, with optional scale parameter.
+
+=cut
+
 sub ctl_min {
     my ( $self, $ctl, $scale ) = @_;
     $scale //= $self->default_scale;
     sv_get_module_ctl_min( $self->slot->num, $self->num, $ctl, $scale );
 }
+
+=head2 ctl_max
+
+    my $max = $module->ctl_max( 3 );
+    my $max_hex = $module->ctl_max( 3, 1 );
+
+Return the maximum value for the specified control, with optional scale parameter.
+
+=cut
 
 sub ctl_max {
     my ( $self, $ctl, $scale ) = @_;
