@@ -306,10 +306,15 @@ sub get_track_for_note {
 }
 
 sub note_on {
-    my ( $self, $note, $vel ) = @_;
+    my ( $self, $note, $vel, $fx, $val ) = @_;
     my $track = $self->$polyphony_dispatch->{ $self->{ polyphony_strategy } }->( $note );
     @{ $self->track_activity }{ qw/ note time / } = ( $note, time );
-    sv_send_event( $self->slot->num, $track, $note, $vel, $self->num + 1 );
+    sv_send_event( $self->slot->num, $track, $note, $vel, $self->num + 1, $fx, $val );
+}
+
+sub note_on_with_ctl {
+    my ( $self, $note, $vel, $ctl, $val ) = @_;
+    $self->note_on( $note, $vel, $ctl << 8, $val );
 }
 
 sub note_off {
