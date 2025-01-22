@@ -5,7 +5,28 @@ package Audio::SunVox::FFI::Module;
 use strict;
 use warnings;
 
-use base 'Exporter';
+=encoding UTF-8
+
+=head1 SYNOPSIS
+
+    use Audio::SunVox::FFI::Module;
+    
+    # Create a generator and connect it to Output
+    # (Also creates a Slot if one doesn't exist,
+    #  uses the last created Slot if none specified)
+    my ( $generator, $output ) = Generator->new->connect( Output->new );
+    $generator->volume( 0xD0 );
+    
+    # Note, velocity
+    $generator->note_on( 0x3F, 0x7A );
+    sleep 1;
+    $generator->note_off( 0x3F );
+
+=head1 DESCRIPTION
+
+Audio::SunVox::FFI::Module offers an OO interface to L<Audio::SunVox::FFI> modules.
+
+=cut
 
 use meta;
 no warnings 'meta::experimental';
@@ -30,7 +51,31 @@ my $scales = {
 };
 our $default_scale = 'disp';
 
-use namespace::clean;
+=head1 COMMON METHODS
+
+=head2 flags
+
+    my $flags = $module->flags;
+    my $is_generator = $flags & SV_MODULE_FLAG_GENERATOR;
+
+Returns the L<module flags|https://warmplace.ru/soft/sunvox/sunvox_lib.php#cmodflags>
+for the instance.
+
+=head2 outputs
+
+    my $outputs = $module->outputs;
+
+Returns the list of module numbers for modules connected to from this module.
+
+=cut
+
+=head2 inputs
+
+    my $inputs = $module->outputs;
+
+Returns the list of module numbers for modules connected to this module.
+
+=cut
 
 my $get_dispatch = {
     flags      => \&sv_get_module_flags,
@@ -485,12 +530,17 @@ package Output {
     sub add_to_slot {}
 }
 
-1;
+=head1 MODULE PARAMETER METHODS
 
-__END__
+Parameter methods are generated when this module is loaded. See
+L<Audio::SunVox::FFI::ClassReference> for a class and method reference,
+including valid ranges for each of the scaling options.
+Note: Depending on your SunVox library version, this document may not
+100% match up with your available modules.
 
-=head1 Module and Method Reference
-
-See L<Audio::SunVox::FFI::ClassReference>
+These methods are wrappers for L</ctl_value>.
 
 =cut
+
+1;
+
