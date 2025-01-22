@@ -225,14 +225,18 @@ sub skip_bounds_checking {
     $self->{ skip_bounds_checking };
 }
 
+sub exists { !! ( shift->flags & SV_MODULE_FLAG_EXISTS ) }
+sub is_generator { !! ( shift->flags & SV_MODULE_FLAG_GENERATOR ) }
+sub is_effect { !! ( shift->flags & SV_MODULE_FLAG_EFFECT ) }
+sub is_mute { !! ( shift->flags & SV_MODULE_FLAG_MUTE ) }
+sub is_solo { !! ( shift->flags & SV_MODULE_FLAG_SOLO ) }
+sub is_bypassed { !! ( shift->flags & SV_MODULE_FLAG_BYPASS ) }
+
 sub scale { $scales->{ $_[1] } }
 
 sub num { shift->{ num } }
-
 sub slot { shift->{ slot } }
-
 sub tracks { shift->{ tracks } }
-
 sub track_activity { shift->{ track_activity } }
 
 sub default_scale { shift->scale( $default_scale ) }
