@@ -414,6 +414,18 @@ sub move_to_slot {
     $target;
 }
 
+sub clone_tree_to_slot {
+    my ( $self, $slot ) = @_;
+    ...
+}
+*clone_chain_to_slot = \&clone_tree_to_slot;
+
+sub move_tree_to_slot {
+    my ( $self, $slot ) = @_;
+    ...
+}
+*move_chain_to_slot = \&move_tree_to_slot;
+
 for my $module_name ( keys %{ $module_data } ) {
     my $module = $module_data->{ $module_name };
     my $meta = meta::package->get( $module->{ class_name } );
