@@ -132,9 +132,9 @@ for my $scale ( qw/ real hex disp /) {
     $meta->add_symbol( "&ctl_value_$scale" , sub {
         my ( $self, $ctl, $val ) = @_;
         my $nscale = $self->scale( $scale );
-        return sv_set_module_ctl_value( $self->slot->num, $self->num, $ctl, $val, $self->scale( $scale ) )
+        return sv_set_module_ctl_value( $self->slot->num, $self->num, $ctl, $val, $nscale )
             if defined $val;
-        sv_get_module_ctl_value( $self->slot->num, $self->num, $ctl, $self->scale( $scale ) );
+        sv_get_module_ctl_value( $self->slot->num, $self->num, $ctl, $nscale );
     } );
 }
 
