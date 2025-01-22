@@ -351,13 +351,13 @@ my $curve_map = {
     MultiSynth       => [ 128, 257, 128 ], # note/velocity, velocity/velocity, note/pitch
     WaveShaper       => [ 256 ],           # waveshaper curve
     MultiCtl         => [ 257 ],           # multictl curve
-    Generator        => [ 32 ]             # drawn waveform
-    AnalogGenerator  => [ 32 ]             # drawn waveform
+    Generator        => [ 32 ],            # drawn waveform
+    AnalogGenerator  => [ 32 ],            # drawn waveform
 };
 
 sub curve {
     my ( $self, $curve_num, $data, $length ) = @_;
-    $length //= $curve_map->{ ref $self }->[ $curve_num ];
+    $length //= $curve_map->{ ref $self }->[ $curve_num ] // @{ $data };
     sv_module_curve( $self->slot->num, $self->num, $curve_num, $data, $length );
 }
 
