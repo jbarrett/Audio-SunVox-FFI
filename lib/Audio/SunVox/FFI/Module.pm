@@ -340,6 +340,7 @@ sub remove {
     my ( $self ) = @_;
     $self->slot->remove_module( $self );
 }
+*delete = \&remove;
 
 sub scope {
     my ( $self, $channel, $samples ) = @_;
