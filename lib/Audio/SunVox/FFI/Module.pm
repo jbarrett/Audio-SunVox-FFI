@@ -374,14 +374,22 @@ sub send_event {
 }
 *event = \&send_event;
 
-sub _sort_tracks_by_time {
-    my $self = shift;
+sub _sort_tracks_by_n {
+    my ( $self, $n ) = @_;
     my @tracks = @_ || @{ $self->tracks };
     sort {
-        $self->track_activity->{ $a }->{ time }
+        $self->track_activity->{ $a }->{ $n }
         <=>
-        $self->track_activity->{ $b }->{ time }
+        $self->track_activity->{ $b }->{ $n }
     } @tracks;
+}
+
+sub _sort_tracks_by_time {
+    shift->_sort_tracks_by_n( 'time' );
+}
+
+sub _sort_tracks_by_note {
+    shift->_sort_tracks_by_n( 'note' );
 }
 
 my $polyphony_dispatch;
@@ -403,6 +411,12 @@ $polyphony_dispatch = {
     },
     first => sub {
         ( shift->_sort_tracks_by_time )[-1];
+    },
+    low => sub {
+        ( shift->_sort_tracks_by_note )[-1];
+    },
+    high => sub {
+        ( shift->_sort_tracks_by_note )[0];
     },
     rand => sub {
         ( shuffle @{ shift->tracks } )[0];
