@@ -36,4 +36,5 @@ inc/
 
 # This
 sunvox_lib/
-Audio-SunVox-FFI-*
+/[ABCDEFGHIJKLMNOPQRSTUVWXYZ]*/
+*.sunvox
